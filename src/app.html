@@ -1,0 +1,1580 @@
+<title>HSG 영상 DB</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans+KR:wght@400;500;700;800;900&family=Montserrat:wght@700;800&display=swap">
+<style>
+/* Layout: a library card catalogue — sticky top bar with tabs, a filter rail beside a dense record list, a record sheet that slides in from the right. */
+:root{
+  --bg:#f3f5f7; --surface:#ffffff; --sunk:#e9edf1; --line:#d6dde4; --fg:#16212c; --muted:#5b6977;
+  --accent:#1f5f8b; --accent-ink:#ffffff; --accent-soft:#e1edf6;
+  --p:#2f7a55; --p-soft:#e2f1e8; --h:#1f5f8b; --h-soft:#e1edf6; --c:#7a4a8f; --c-soft:#f0e6f4;
+  --warn:#a35d00; --warn-soft:#fdf0dc; --bad:#b3362c; --bad-soft:#fbe5e3; --good:#2f7a55;
+  --f-body:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:8px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f151b; --surface:#16202a; --sunk:#1c2833; --line:#2b3a48; --fg:#e4ebf1; --muted:#93a3b2;
+  --accent:#6fb0de; --accent-ink:#0b141c; --accent-soft:#1c3446;
+  --p:#7cc79f; --p-soft:#1b3428; --h:#6fb0de; --h-soft:#1c3446; --c:#c49ad6; --c-soft:#33253b;
+  --warn:#f0b35a; --warn-soft:#3a2a12; --bad:#f08a80; --bad-soft:#3d1f1c; --good:#7cc79f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f151b; --surface:#16202a; --sunk:#1c2833; --line:#2b3a48; --fg:#e4ebf1; --muted:#93a3b2;
+  --accent:#6fb0de; --accent-ink:#0b141c; --accent-soft:#1c3446;
+  --p:#7cc79f; --p-soft:#1b3428; --h:#6fb0de; --h-soft:#1c3446; --c:#c49ad6; --c-soft:#33253b;
+  --warn:#f0b35a; --warn-soft:#3a2a12; --bad:#f08a80; --bad-soft:#3d1f1c; --good:#7cc79f; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:14px;line-height:1.55}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:1280px;margin:0 auto}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.topbar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-block:10px}
+.brand{display:flex;align-items:baseline;gap:8px;font-weight:700;font-size:16px;white-space:nowrap}
+.brand small{font-weight:500;color:var(--muted);font-size:12px}
+nav.tabs{display:flex;gap:4px;flex-wrap:wrap}
+nav.tabs a{padding:6px 12px;border-radius:999px;color:var(--muted);text-decoration:none;font-weight:500;display:flex;gap:6px;align-items:center}
+nav.tabs a:hover{background:var(--sunk);color:var(--fg)}
+nav.tabs a[aria-current="page"]{background:var(--accent-soft);color:var(--accent)}
+.count{font-family:var(--f-mono);font-size:11px;padding:1px 6px;border-radius:999px;background:var(--warn-soft);color:var(--warn)}
+.who{margin-left:auto;font-size:12px;color:var(--muted)}
+main{padding-block:20px 60px}
+h1{font-size:20px;margin:0 0 4px;text-wrap:balance}
+h2{font-size:15px;margin:0;text-wrap:balance}
+.sub{color:var(--muted);margin:0 0 16px}
+.label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+button,.btn{font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:var(--r);padding:7px 12px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;font-weight:500}
+button:hover,.btn:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.ghost{border-color:transparent;background:transparent;color:var(--muted)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,select,textarea{font:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:7px 10px;width:100%}
+textarea{resize:vertical;min-height:70px}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none}
+.searchrow{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.searchrow .q{flex:1 1 320px;min-width:0}
+.searchrow .q input{font-size:15px;padding:10px 12px}
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.filters label{display:flex;flex-direction:column;gap:4px}
+.resultbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;color:var(--muted);font-size:13px}
+.list{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.codes{display:flex;flex-wrap:wrap;gap:4px}
+.kwbox{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border:1px solid var(--line);border-radius:var(--r);padding:6px 8px;background:var(--surface)}
+.kwbox:focus-within{border-color:var(--accent)}
+.kwbox input{border:0;padding:4px;flex:1;min-width:140px;width:auto}
+.kwbox input:focus{outline:none}
+.pill.exk{cursor:pointer;background:var(--surface)}
+.pill.exk:hover{border-color:var(--accent);color:var(--accent)}
+.rec{gap:16px}
+.rec-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.rec-title{font-size:19px;margin-top:2px}
+.rec-total{display:flex;flex-direction:column;align-items:flex-end;background:var(--accent-soft);border-radius:var(--r);padding:8px 14px}
+.rec-total b{font-family:var(--f-mono);font-size:20px;color:var(--accent)}
+.rec-step-h{display:flex;gap:10px;align-items:baseline;margin-bottom:4px;flex-wrap:wrap}
+.rec-no{font-family:var(--f-mono);font-size:12px;color:var(--accent);font-weight:600}
+.mod-cell{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.row{display:grid;grid-template-columns:136px minmax(0,1fr) 128px 64px 60px 92px;gap:12px;align-items:center;padding:10px 14px;border-top:1px solid var(--line);cursor:pointer;font-variant-numeric:tabular-nums}
+.row:first-child{border-top:0}
+.row:hover{background:var(--sunk)}
+.row.head{cursor:default;background:var(--sunk);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;padding-block:7px}
+.row .t{min-width:0}
+.row .t b{font-weight:600;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .t span{display:block;color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mono{font-family:var(--f-mono);font-size:12.5px}
+.code{font-family:var(--f-mono);font-weight:600;font-size:12.5px;padding:2px 7px;border-radius:5px;display:inline-block;white-space:nowrap}
+.code.P{background:var(--p-soft);color:var(--p)}.code.H{background:var(--h-soft);color:var(--h)}.code.C{background:var(--c-soft);color:var(--c)}
+.pill{font-size:11.5px;padding:1px 8px;border-radius:999px;display:inline-block;white-space:nowrap;border:1px solid var(--line);color:var(--muted)}
+.pill.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.pill.bad{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+.pill.ok{color:var(--good)}
+.pill.pv{background:var(--p-soft);color:var(--p);border-color:transparent;font-weight:500}
+.pills{display:flex;gap:4px;flex-wrap:wrap}
+.more{display:flex;justify-content:center;padding:12px}
+.empty{padding:40px 16px;text-align:center;color:var(--muted)}
+@media (max-width:720px){
+  .row{grid-template-columns:72px minmax(0,1fr) 52px;}
+  .row .hide-s{display:none}
+}
+/* sheet */
+.scrim{position:fixed;inset:0;background:rgba(10,18,26,.35);z-index:20}
+.sheet{position:fixed;top:0;right:0;bottom:0;width:min(640px,100%);background:var(--surface);z-index:21;border-left:1px solid var(--line);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px)}
+.sheet-h{display:flex;gap:10px;align-items:flex-start;padding:16px 20px;border-bottom:1px solid var(--line)}
+.sheet-h .grow{flex:1;min-width:0}
+.sheet-b{overflow:auto;padding:18px 20px 40px;display:flex;flex-direction:column;gap:18px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+dl.meta{display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px 14px;margin:0}
+dl.meta dt{color:var(--muted);font-size:13px}
+dl.meta dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.summary{background:var(--accent-soft);border-radius:var(--r);padding:14px 16px}
+.summary h2{font-size:16px;font-weight:700;color:var(--accent);margin:0 0 6px}
+.summary p{margin:0}
+.summary p.pre::first-line{font-weight:600}
+.pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:4px 0 0}
+.box{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form label{display:flex;flex-direction:column;gap:4px;min-width:0}
+.form .full{grid-column:1/-1}
+@media (max-width:560px){.form{grid-template-columns:1fr}}
+.hint{font-size:12px;color:var(--muted)}
+.chipin{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:4px;background:var(--sunk);border-radius:999px;padding:2px 4px 2px 10px;font-size:12.5px}
+.chip button{border:0;background:transparent;padding:0 6px;color:var(--muted)}
+/* modules */
+.mgrid{display:grid;grid-template-columns:260px minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:760px){.mgrid{grid-template-columns:1fr}}
+.mlist{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);max-height:70vh;overflow:auto}
+.mlist button{display:flex;justify-content:space-between;width:100%;border:0;border-top:1px solid var(--line);border-radius:0;padding:9px 14px;text-align:left;font-weight:500}
+.mlist button:first-child{border-top:0}
+.mlist button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
+.mlist .n{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.steps{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.step{display:grid;grid-template-columns:32px 92px minmax(0,1fr);gap:12px;align-items:center;padding:10px 14px;border-top:1px solid var(--line)}
+.step:first-child{border-top:0}
+.step .pos{font-family:var(--f-mono);color:var(--muted);text-align:right}
+.step.clickable{cursor:pointer}.step.clickable:hover{background:var(--sunk)}
+@media (max-width:560px){.step{grid-template-columns:24px 78px minmax(0,1fr)}}
+/* check */
+.reasons{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.reasons button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.notice{background:var(--warn-soft);color:var(--fg);border-radius:var(--r);padding:10px 14px;font-size:13px}
+.notice.info{background:var(--accent-soft)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+table.t{width:100%;border-collapse:collapse;font-size:13px}
+table.t th,table.t td{text-align:left;padding:6px 8px;border-top:1px solid var(--line)}
+table.t th{color:var(--muted);font-weight:600;font-size:12px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:2px;color:var(--fg);text-decoration:none;min-width:0}
+a.tile:hover{border-color:var(--accent)}
+.tile b{font-family:var(--f-mono);font-size:24px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.3}
+.vimeo-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.vimeo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;align-items:start}
+.bars{display:flex;flex-direction:column;gap:6px}
+.bar-row{display:grid;grid-template-columns:minmax(0,9.5em) minmax(40px,1fr) 2.2em 5.5em;gap:8px;align-items:center;font-size:13px;font-variant-numeric:tabular-nums}
+.bar-l{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-t{height:10px;background:var(--sunk);border-radius:999px;overflow:hidden}
+.bar-f{display:block;height:100%;background:var(--accent);border-radius:999px}
+.bar-f.zero{background:transparent}
+.bar-n{font-family:var(--f-mono);text-align:right;font-weight:600}
+.bar-s{color:var(--muted);font-size:12px;white-space:nowrap}
+.to-top{position:fixed;right:calc(20px + env(safe-area-inset-right,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:15;width:44px;height:44px;border-radius:999px;padding:0;justify-content:center;background:var(--surface);color:var(--accent);border:1px solid var(--line);box-shadow:0 2px 10px rgba(10,18,26,.15)}
+.to-top:hover{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:999px;z-index:40;font-size:13px}
+.loading{padding:40px;text-align:center;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:slide .18s ease-out}@keyframes slide{from{transform:translateX(24px);opacity:.6}}}
+.inst-grid{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:10px 10px}
+@media (max-width:1100px){.inst-grid{grid-template-columns:repeat(7,minmax(0,1fr))}}
+@media (max-width:900px){.inst-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media (max-width:600px){.inst-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.inst-cell{display:flex;flex-direction:column;gap:3px;min-width:0}
+.inst-cell .mono{font-size:12px;color:var(--muted,inherit)}
+.inst-cell input{width:100%;min-width:0}
+/* ---- 영상 카달로그 ---- */
+.cat-aud{display:grid;grid-template-columns:1fr 130px;gap:12px;min-width:0}
+.cat-hc{display:flex;align-items:center;gap:6px}
+.cat-hc em{font-style:normal;color:var(--muted)}
+.cat-counts{display:grid;grid-template-columns:repeat(3,minmax(0,190px));gap:10px;margin-top:4px}
+.cat-counts .cc{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted)}
+.cc-in{display:grid;grid-template-columns:1fr 78px;gap:6px}
+.cc-in input,.cc-in select{width:100%}
+@media (max-width:560px){.cat-counts{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.cat-logo-prev{height:36px;max-width:160px;object-fit:contain;background:#55348b;padding:6px 10px;border-radius:6px}
+.cat-out{display:flex;flex-direction:column;gap:12px;margin-top:16px}
+.cat-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px}
+.cat-bar>div:first-child{display:flex;flex-direction:column;gap:2px;min-width:0}
+.cat-slides{display:flex;flex-direction:column;gap:14px}
+.sl-wrap{position:relative;width:100%;overflow:hidden;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.18);--s:.5}
+.sl-scale{width:1280px;height:720px;transform:scale(var(--s));transform-origin:0 0}
+.cat-capture{position:fixed;left:-30000px;top:0;width:1280px}
+.cat-slides [contenteditable]{outline:1px dashed transparent;border-radius:3px;cursor:text}
+.cat-slides [contenteditable]:hover{outline-color:rgba(85,52,139,.45)}
+.cat-slides [contenteditable]:focus{outline:2px solid #55348b;background:rgba(255,255,255,.6)}
+.sl-cover .cv-l [contenteditable]:focus{background:rgba(255,255,255,.12)}
+.sl{--pu:#55348b;--pu-soft:#efe9f7;--ink:#26222e;--sub:#6c6676;width:1280px;height:720px;position:relative;overflow:hidden;font-family:"Noto Sans KR","Noto Sans CJK KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:var(--ink);font-size:16px;line-height:1.5;letter-spacing:-.01em;color-scheme:light}
+.sl *{box-sizing:border-box}
+.sl-light{background:#f4f2f8;padding:56px 56px 0}
+.sl .card{background:#fff;border-radius:16px}
+.sl .badge{display:inline-flex;align-items:center;background:var(--pu);color:#fff;font-weight:700;font-size:15px;border-radius:999px;padding:3px 14px;line-height:1.5}
+.sl-h1{font-size:34px;font-weight:800;margin:0;letter-spacing:-.02em;color:var(--ink)}
+.sl-foot{position:absolute;left:56px;right:56px;bottom:28px;display:flex;justify-content:space-between;align-items:center;font-size:15px;color:var(--sub)}
+.sl-foot b{color:var(--pu);font-weight:700}
+.sl-logo{height:24px}
+/* cover */
+.sl-cover{background:#55348b;color:#fff;display:grid;grid-template-columns:1fr 470px}
+.cv-l{position:relative;padding:72px 0 0 76px}
+.cv-client{height:56px;display:flex;align-items:center}
+.cv-client img{max-height:52px;max-width:360px;object-fit:contain}
+.cv-client span{font-size:30px;font-weight:700}
+.cv-bar{width:48px;height:5px;background:#f2b705;margin:52px 0 22px;border-radius:3px}
+.cv-kicker{color:#f2b705;font-size:22px;font-weight:700}
+.cv-title{font-size:76px;font-weight:900;line-height:1.16;margin:18px 0 26px;letter-spacing:-.02em}
+.cv-sub{font-size:20px;line-height:1.75;color:rgba(255,255,255,.88)}
+.cv-hsg{position:absolute;left:76px;bottom:72px;height:42px}
+.cv-r{display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:116px;gap:16px;padding:18px 32px 18px 0;align-content:center}
+.cv-tile{border-radius:12px;padding:16px 16px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+.cv-tile b{font-family:Montserrat,sans-serif;font-weight:800;font-size:15px;letter-spacing:.02em}
+.cv-tile span{font-size:17px;font-weight:700;line-height:1.35;max-height:46px;overflow:hidden}
+.cv-tile.t0{background:#fff;color:#55348b}
+.cv-tile.t1{background:#6b4ba1;color:#fff}
+.cv-tile.t2{background:#efe9f7;color:#3d2468}
+.cv-tile.t3{background:#f2b705;color:#2a1d00}
+/* overview */
+.ov-grid{display:grid;gap:22px;margin-top:30px}
+.ov-card{padding:28px 30px 26px;height:494px;display:flex;flex-direction:column}
+.ov-card .badge{align-self:flex-start}
+.ov-card.many .ov-num b{font-size:60px}
+.ov-card.many .ov-num{margin:6px 0 12px;padding-bottom:12px}
+.ov-card.many .ov-bars{gap:7px}
+.ov-name{font-size:22px;font-weight:800;line-height:1.4;margin-top:16px;min-height:62px}
+.ov-num{display:flex;align-items:baseline;gap:6px;margin:10px 0 16px;padding-bottom:18px;border-bottom:1px solid #e6e2ec}
+.ov-num b{font-family:Montserrat,sans-serif;font-weight:800;font-size:76px;line-height:1;color:var(--pu);letter-spacing:-.03em}
+.ov-num em{font-style:normal;font-size:22px;font-weight:800;color:var(--pu)}
+.ov-num span{font-size:18px;color:var(--sub)}
+.ov-bars{display:flex;flex-direction:column;gap:12px}
+.ov-bar{display:grid;grid-template-columns:76px 1fr 24px;align-items:center;gap:10px;font-size:15px}
+.ov-bar i{height:12px;border-radius:999px;display:block;min-width:6px}
+.ov-bar b{font-family:Montserrat,sans-serif;font-weight:800;font-size:15px}
+.ov-desc{margin:auto 0 0;padding-top:14px;font-size:15px;line-height:1.65;color:var(--sub);max-height:90px;overflow:hidden}
+.ov-desc b{color:var(--ink)}
+/* list */
+.sl-head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px}
+.kick{display:flex;align-items:center;gap:10px;color:var(--sub);font-size:16px;margin-bottom:8px}
+.big{display:flex;align-items:baseline;gap:4px;color:var(--pu);white-space:nowrap}
+.big b{font-family:Montserrat,sans-serif;font-weight:800;font-size:58px;line-height:1;letter-spacing:-.03em}
+.big em{font-style:normal;font-weight:800;font-size:18px;margin-right:12px}
+.big small{font-weight:800;font-size:18px;margin-right:4px}
+.ls-grid{display:grid;gap:20px;margin-top:30px;align-items:start}
+.ls-col{padding:0 0 6px;overflow:hidden;display:block}
+.ls-h{display:flex;justify-content:space-between;align-items:center;padding:16px 22px;border-bottom:2px solid var(--c);font-weight:800;font-size:18px}
+.ls-h span{display:flex;align-items:center;gap:10px}
+.ls-h i{width:11px;height:11px;border-radius:2px;background:var(--c);display:inline-block}
+.ls-h b{color:var(--pu);font-size:16px}
+.ls-row{display:grid;grid-template-columns:60px 1fr;gap:8px;padding:12px 22px;border-bottom:1px solid #eeebf2;font-size:15px;line-height:1.4;position:relative}
+.ls-row:last-child{border-bottom:0}
+.ls-row b{font-family:Montserrat,sans-serif;font-weight:800;font-size:13px;color:var(--pu);padding-top:2px}
+.ls-grid.dense .ls-row{padding:6px 22px;font-size:14px}
+.ls-grid.xdense .ls-row{padding:4px 18px;font-size:13px;line-height:1.3}
+.ls-grid.xdense .ls-h{padding:10px 18px;font-size:16px}
+.ls-row .rm{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:#fbe5e3;color:#b3362c;width:22px;height:22px;padding:0;border-radius:50%;font-size:14px;line-height:1;opacity:0;justify-content:center}
+.ls-row:hover .rm,.ls-row .rm:focus{opacity:1}
+/* reason */
+.rs-meta{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.rs-meta>b{color:var(--pu);font-size:26px;font-weight:800}
+.legend{display:flex;gap:16px;font-size:15px;color:var(--ink)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:11px;height:11px;border-radius:2px;display:inline-block}
+.rs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:34px}
+.rs-card{padding:30px;height:402px;overflow:hidden}
+.rs-no{font-family:Montserrat,sans-serif;font-weight:800;font-size:32px;color:var(--pu);line-height:1}
+.rs-card h3{font-size:21px;font-weight:800;margin:16px 0 12px}
+.rs-card p{margin:0;font-size:17px;line-height:1.7;color:#3b3646}
+.rs-card.dark{background:var(--pu);color:#fff}
+.rs-card.dark .rs-no{color:#f2b705}
+.rs-card.dark h3{color:#fff}
+.rs-card.dark .fit{color:#fff;font-weight:500}
+.rs-card.dark .note{color:rgba(255,255,255,.82);font-size:15px;margin-top:16px}
+.sl .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.sl .tags span{background:var(--pu-soft);color:#4a2d7c;border-radius:999px;padding:2px 11px;font-size:14px}
+/* detail */
+.dt-head{display:flex;justify-content:space-between;align-items:center;gap:20px}
+.dt-head h2{font-size:26px;font-weight:800;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dt-head h2 i{font-style:normal;color:var(--pu);font-weight:400;margin:0 4px}
+.dt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:16px}
+.sl-light.sl-dt{padding-top:40px}
+.dt-card{height:556px;padding:14px 18px 18px;overflow:hidden;display:flex;flex-direction:column}
+.dt-vis{flex:none;height:124px;border-radius:10px;background:linear-gradient(135deg,var(--c),#2c1a4d);position:relative;color:#fff;overflow:hidden}
+.dt-code{position:absolute;left:18px;bottom:10px;font-family:Montserrat,sans-serif;font-weight:800;font-size:46px;line-height:1;opacity:.95}
+.dt-comp{position:absolute;left:18px;top:14px;font-size:14px;font-weight:700;background:rgba(255,255,255,.2);border-radius:999px;padding:1px 10px}
+.dt-dur{position:absolute;right:16px;bottom:14px;font-family:Montserrat,sans-serif;font-weight:700;font-size:15px}
+.dt-meta{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:14px;color:var(--sub)}
+.dt-meta .cb{background:var(--pu);color:#fff;font-family:Montserrat,sans-serif;font-weight:800;font-size:13px;padding:2px 8px;border-radius:4px}
+.dt-meta .md{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dt-meta b{font-family:Montserrat,sans-serif;font-weight:800;color:var(--pu);font-size:14px}
+.dt-title{font-size:20px;font-weight:800;line-height:1.38;margin:8px 0 12px;max-height:60px;overflow:hidden}
+.dt-target{display:grid;grid-template-columns:auto 1fr;gap:12px;background:var(--pu-soft);border-left:3px solid var(--pu);border-radius:0 6px 6px 0;padding:9px 12px;font-size:15px;line-height:1.45}
+.dt-target b{color:var(--pu);white-space:nowrap}
+.dt-card .tags{margin-top:12px}
+.dt-pitch{margin:12px 0 0;font-size:15px;line-height:1.6;color:#3b3646;max-height:168px;overflow:hidden}
+/* thumbnails */
+.thumb-box{width:100%;flex:none;position:relative;border-radius:var(--r);overflow:hidden;background:var(--sunk);aspect-ratio:16/9}
+.thumb-box img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb-box.small{max-width:360px}
+.thumb-act{position:absolute;right:8px;bottom:8px;display:flex;gap:6px}
+.thumb-act .btn,.thumb-act button{background:rgba(255,255,255,.92);color:#16212c;border-color:transparent;padding:4px 10px;font-size:13px;cursor:pointer}
+.thumb-empty{width:100%;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:1.5px dashed var(--line);border-radius:var(--r);padding:18px;text-align:center;cursor:pointer;color:var(--muted);background:var(--surface)}
+.thumb-empty b{color:var(--accent)}
+.thumb-empty.small{max-width:360px}
+.thumb-empty.over,.thumb-empty:hover{border-color:var(--accent);background:var(--accent-soft)}
+.bulk-drop{display:flex;flex-direction:column;align-items:center;gap:4px;border:1.5px dashed var(--line);border-radius:var(--r);padding:20px;text-align:center;cursor:pointer;color:var(--muted)}
+.bulk-drop.over,.bulk-drop:hover{border-color:var(--accent);background:var(--accent-soft)}
+.bulk-log{max-height:180px;overflow:auto;font-size:12.5px;background:var(--sunk);border-radius:6px;padding:8px 10px;white-space:pre-wrap;font-family:var(--f-mono)}
+.thumb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;max-height:520px;overflow:auto}
+.thumb-grid button{padding:0;display:flex;flex-direction:column;align-items:stretch;gap:0;overflow:hidden;border-radius:6px;text-align:left}
+.thumb-grid img,.thumb-grid .ph{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:var(--sunk)}
+.thumb-grid .ph{display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted)}
+.thumb-grid span{font-size:12px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dt-vis.has-img{background:#ddd}
+.dt-vis img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.dt-vis .dt-comp{z-index:1}
+.dt-vis.has-img .dt-comp{background:rgba(0,0,0,.45)}
+.cv-tile.img{padding:0;background:#3d2468}
+.cv-tile.img img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb-empty .ic{color:var(--accent)}
+.script-box{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;background:var(--surface)}
+.script-ic{color:var(--accent);display:flex}
+.script-meta{display:flex;flex-direction:column;min-width:0}
+.script-meta b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.script-meta span{font-size:12px;color:var(--muted)}
+.script-act{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.script-act button,.script-act .btn{padding:4px 10px;font-size:13px;cursor:pointer}
+.script-text{grid-column:1/-1;margin:4px 0 0;max-height:320px;overflow:auto;white-space:pre-wrap;font-family:var(--f-body);font-size:13px;line-height:1.7;background:var(--sunk);border-radius:6px;padding:10px 12px}
+.script-empty{flex-direction:row;gap:10px;justify-content:flex-start;text-align:left;padding:12px 16px;max-width:none}
+.script-empty b{white-space:nowrap}
+.script-empty span{font-size:12.5px}
+.re-box{grid-column:1/-1;display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:10px;margin-top:4px}
+.re-box[hidden]{display:none}
+.re-box label{display:flex;flex-direction:column;gap:4px}
+.re-h{display:flex;flex-direction:column;gap:2px}
+.summary h2 .undo{font-size:12px;font-weight:500;padding:2px 8px;margin-left:6px;vertical-align:middle}
+.cat-slides [data-ph]:empty::before{content:attr(data-ph);color:#b0a8bd;font-weight:400}
+.sl-cover.sl-end .cv-sub{max-width:520px}
+.qt-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:16px;color:var(--sub)}
+.qt-meta b{color:var(--ink)}
+.qt-table{margin-top:28px;padding:6px 0;overflow:hidden}
+.qt-row{display:grid;grid-template-columns:110px minmax(0,2.2fr) 150px 100px 120px 130px 170px;gap:12px;align-items:center;padding:16px 28px;border-bottom:1px solid #eeebf2;font-size:16px}
+.qt-row:last-child{border-bottom:0}
+.qt-th{font-size:14px;font-weight:700;color:var(--sub);padding-top:12px;padding-bottom:12px;border-bottom:2px solid var(--pu)}
+.qt-name{font-weight:700;line-height:1.4}
+.qt-amt{font-size:20px;color:var(--pu);text-align:right;font-weight:800}
+.qt-th span:last-child{text-align:right}
+.qt-note{margin-top:22px;white-space:pre-line;font-size:15px;line-height:1.8;color:var(--sub);background:#fff;border-radius:12px;padding:16px 24px}
+.ct-card{align-self:center;margin-right:72px;background:#fff;color:#26222e;border-radius:18px;padding:30px 34px;display:flex;flex-direction:column;gap:4px}
+.sl-cover.sl-end{grid-template-columns:1fr 500px}
+.ct-row{display:grid;grid-template-columns:86px 1fr;gap:12px;padding:11px 0;border-bottom:1px solid #eeebf2;font-size:17px;align-items:baseline}
+.ct-row:last-child{border-bottom:0}
+.ct-row span{color:#6c6676;font-size:15px}
+.ct-row b{font-weight:600;word-break:break-all}
+</style>
+
+<header class="top"><div class="wrap topbar">
+  <div class="brand">HSG 영상 DB</div>
+  <nav class="tabs" id="tabs">
+    <a href="#search" data-v="search">검색</a>
+    <a href="#modules" data-v="modules">모듈별 보기</a>
+    <a href="#catalog" data-v="catalog">영상 카달로그</a>
+    <a href="#check" data-v="check">확인 필요 <span class="count" id="checkCount">0</span></a>
+    <a href="#add" data-v="add">영상 등록</a>
+    <a href="#admin" data-v="admin">관리</a>
+  </nav>
+  <div class="who" id="who"></div>
+</div></header>
+
+<main class="wrap" id="app"><div class="loading" id="boot">영상 목록을 불러오는 중입니다…</div></main>
+<div id="sheetRoot"></div>
+<div id="toastRoot"></div>
+<button type="button" id="toTop" class="to-top" aria-label="맨 위로" title="맨 위로" hidden><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+(() => {
+const S = {videos:[], modules:[], links:[], instructors:[], loaded:{v:false,m:false,l:false,i:false},
+  view:'search', q:'', f:{kind:'',module:'',inst:'',status:'사용'}, sort:'code', shown:60,
+  mod:null, reason:'', canWrite:true, db:null, user:null, sample:null, uid:null, open:null, editing:false};
+const $ = (s, r=document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const CODE_RE = /^[PHC]\d{3}(-\d+)?$/;
+const KIND = {P:'성과백신', H:'판매용', C:'기업맞춤'};
+const STATUSES = ['사용','제작 중','미사용','삭제','리뉴얼로 대체됨'];
+const isTemp = c => /^T-/.test(c||'');
+const codeBadge = (code, kind) => isTemp(code) ? '<span class="pill warn">제작 중</span>' : `<span class="code ${esc(kind)}">${esc(code)}</span>`;
+const secs = d => { const p = String(d||'').split(':').map(Number); if (p.some(isNaN) || !d) return -1; return p.reduce((a,b)=>a*60+b,0); };
+const fmtDur = d => { const s = secs(d); if (s<0) return d||''; const h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60; return (h? h+':'+String(m).padStart(2,'0') : String(m).padStart(2,'0'))+':'+String(x).padStart(2,'0'); };
+const today = () => new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
+function toast(msg){ const r=$('#toastRoot'); r.innerHTML=`<div class="toast" role="status">${esc(msg)}</div>`; clearTimeout(toast.t); toast.t=setTimeout(()=>r.innerHTML='',2600); }
+
+/* ---------- derived ---------- */
+function modName(id){ return (S.modules.find(m=>m.id===id)||{}).name || id; }
+function videoModules(v){ return S.links.filter(l=>l.code===v.code).map(l=>modName(l.module)); }
+function instSet(){ return new Set(S.instructors.map(i=>i.id)); }
+function reasonsFor(v, ctx){
+  const r=[];
+  if (v.status==='제작 중') return r;
+  if (!CODE_RE.test(v.code||'')) r.push('번호 형식 오류');
+  if (v.status==='사용' && ctx.activeByCode[v.code]>1) r.push('중복 번호');
+  if (v.status!=='사용') return r;
+  if (!v.link) r.push('링크 없음');
+  if (!v.instructor || !ctx.inst.has(v.instructor)) r.push('강사 확인');
+  if (!(v.summary||'').trim()) r.push('내용 요약 없음');
+  if (v.kind!=='C' && !ctx.linked.has(v.code)) r.push('모듈 미연결');
+  if (!v.duration || !v.date) r.push('정보 직접 입력');
+  return r;
+}
+function ctx(){
+  const activeByCode={}; S.videos.forEach(v=>{ if(v.status==='사용') activeByCode[v.code]=(activeByCode[v.code]||0)+1; });
+  return {activeByCode, inst:instSet(), linked:new Set(S.links.map(l=>l.code).filter(Boolean))};
+}
+function linkProblems(){
+  const byCode={}; S.videos.forEach(v=>{ (byCode[v.code] ||= []).push(v); });
+  return S.links.map(l=>{
+    if (!l.code) return {l, why:'번호 없음 (미제작?)'};
+    const vs=byCode[l.code]; if(!vs) return {l, why:'없는 번호'};
+    if (!vs.some(v=>v.status==='사용')) return vs.some(v=>v.status==='제작 중')? null : {l, why:'삭제·대체된 영상'};
+    return null;
+  }).filter(Boolean);
+}
+
+/* ---------- views ---------- */
+function setView(v){ S.view = v; document.querySelectorAll('#tabs a').forEach(a=>a.setAttribute('aria-current', a.dataset.v===v?'page':'false')); render(); }
+window.addEventListener('hashchange', ()=>setView((location.hash||'#search').slice(1)||'search'));
+
+function render(){
+  const ready = S.loaded.v && S.loaded.m && S.loaded.l && S.loaded.i;
+  const c = ctx(); const nCheck = S.videos.filter(v=>reasonsFor(v,c).length).length + linkProblems().length;
+  $('#checkCount').textContent = nCheck;
+  if (!S.db){ $('#app').innerHTML = `<div class="empty">이 화면에서는 데이터 저장소에 연결할 수 없습니다. claude.ai에 로그인한 상태로 이 페이지를 열어 주세요.</div>`; return; }
+  if (!ready){ return; }
+  if (!S.videos.length && S.view!=='add'){ $('#app').innerHTML = `<div class="empty"><h2>아직 등록된 영상이 없습니다</h2><p>기존 시트 데이터가 옮겨지면 여기에 P·H·C 영상이 나타납니다. 새 영상은 <a href="#add">영상 등록</a>에서 추가할 수 있습니다.</p></div>`; return; }
+  ({search:viewSearch, catalog:viewCatalog, recommend:viewCatalog, modules:viewModules, check:viewCheck, add:viewAdd, admin:viewAdmin}[S.view] || viewSearch)(c);
+}
+
+function filtered(){
+  const q = S.q.trim().toLowerCase();
+  let a = S.videos.filter(v=>{
+    if (S.f.kind && v.kind!==S.f.kind) return false;
+    if (S.f.status && v.status!==S.f.status) return false;
+    if (S.f.inst && v.instructor!==S.f.inst) return false;
+    if (S.f.module && !S.links.some(l=>l.module===S.f.module && l.code===v.code)) return false;
+    if (!q) return true;
+    return [v.code,v.title,v.summary,v.client,v.course,v.category,v.instructor].join(' ').toLowerCase().includes(q);
+  });
+  const cmp = {
+    code:(x,y)=>x.code.localeCompare(y.code,'en',{numeric:true}) || (x.date||'').localeCompare(y.date||''),
+    new:(x,y)=>(y.date||'').localeCompare(x.date||''),
+    old:(x,y)=>(x.date||'').localeCompare(y.date||''),
+    long:(x,y)=>secs(y.duration)-secs(x.duration),
+    short:(x,y)=>{ const a=secs(x.duration), b=secs(y.duration); return (a<0)-(b<0) || a-b; },
+  }[S.sort];
+  return a.sort(cmp);
+}
+function opt(v, label, cur){ return `<option value="${esc(v)}"${v===cur?' selected':''}>${esc(label)}</option>`; }
+function viewSearch(){
+  const res = filtered();
+  const mods = S.modules.slice().sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+  $('#app').innerHTML = `
+  <div class="searchrow"><div class="q"><input id="q" type="search" placeholder="일련번호, 제목, 내용, 고객사로 검색" value="${esc(S.q)}" aria-label="검색어"></div>
+    <select id="sort" aria-label="정렬" style="width:auto">${opt('code','번호순',S.sort)}${opt('new','최신 제작순',S.sort)}${opt('old','오래된 순',S.sort)}${opt('long','길이 긴 순',S.sort)}${opt('short','길이 짧은 순',S.sort)}</select></div>
+  <div class="filters">
+    <label><span class="label">구분</span><select id="fKind">${opt('','전체',S.f.kind)}${opt('P','P 성과백신',S.f.kind)}${opt('H','H 판매용',S.f.kind)}${opt('C','C 기업맞춤',S.f.kind)}</select></label>
+    <label><span class="label">모듈</span><select id="fModule">${opt('','전체',S.f.module)}${mods.map(m=>opt(m.id,m.name,S.f.module)).join('')}</select></label>
+    <label><span class="label">강사</span><select id="fInst">${opt('','전체',S.f.inst)}${S.instructors.map(i=>opt(i.id, i.name? `${i.id} · ${i.name}`: i.id, S.f.inst)).join('')}</select></label>
+    <label><span class="label">상태</span><select id="fStatus">${opt('','전체',S.f.status)}${STATUSES.map(s=>opt(s,s,S.f.status)).join('')}</select></label>
+  </div>
+  <div class="resultbar"><span><b>${res.length}</b>개 영상${S.q||S.f.kind||S.f.module||S.f.inst?' 검색됨':''}</span>
+    ${(S.q||S.f.kind||S.f.module||S.f.inst||S.f.status!=='사용')?'<button class="ghost" id="reset">필터 초기화</button>':''}</div>
+  <div class="list" role="list">
+    <div class="row head"><span>번호</span><span>제목 · 내용</span><span class="hide-s">모듈</span><span class="hide-s">강사</span><span>길이</span><span class="hide-s">제작일자</span></div>
+    ${res.slice(0,S.shown).map(rowHtml).join('') || '<div class="empty">조건에 맞는 영상이 없습니다. 검색어나 필터를 바꿔 보세요.</div>'}
+  </div>
+  ${res.length>S.shown?`<div class="more"><button id="more">${res.length-S.shown}개 더 보기</button></div>`:''}`;
+  const q=$('#q'); q.oninput=()=>{ S.q=q.value; S.shown=60; clearTimeout(viewSearch.t); viewSearch.t=setTimeout(()=>{ const pos=q.selectionStart; render(); const n=$('#q'); n.focus(); n.setSelectionRange(pos,pos); },180); };
+  $('#sort').onchange=e=>{S.sort=e.target.value; render();};
+  $('#fKind').onchange=e=>{S.f.kind=e.target.value;S.shown=60;render();};
+  $('#fModule').onchange=e=>{S.f.module=e.target.value;S.shown=60;render();};
+  $('#fInst').onchange=e=>{S.f.inst=e.target.value;S.shown=60;render();};
+  $('#fStatus').onchange=e=>{S.f.status=e.target.value;S.shown=60;render();};
+  $('#reset')?.addEventListener('click',()=>{S.q='';S.f={kind:'',module:'',inst:'',status:'사용'};render();});
+  $('#more')?.addEventListener('click',()=>{S.shown+=100;render();});
+  bindRows();
+}
+function rowHtml(v){
+  const sub = (v.summary||'').trim().split('\n')[0] || (v.kind==='C' ? [v.client,v.course].filter(Boolean).join(' · ') : '');
+  const st = v.status!=='사용' && !isTemp(v.code) ? ` <span class="pill ${v.status==='삭제'?'bad':'warn'}"${v.remark?` title="${esc(v.remark)}"`:''}>${esc(v.status)}</span>`:'';
+  const pv = v.kind==='H' ? (v.related||[]).filter(c=>/^P\d{3}/.test(c)) : [];
+  const pb = pv.map(c=>`<span class="code P" title="같은 내용의 성과백신 영상">${esc(c)}</span>`).join('');
+  return `<div class="row" role="listitem" tabindex="0" data-id="${esc(v.id)}">
+    <span class="codes">${codeBadge(v.code, v.kind)}${pb}</span>
+    <span class="t"><b>${esc(v.title)}${st}</b><span>${esc(sub)}</span></span>
+    <span class="hide-s mod-cell" title="${esc(videoModules(v).join(', '))}">${esc(videoModules(v).join(', ')||'—')}</span>
+    <span class="mono hide-s">${esc(v.instructor||'—')}</span>
+    <span class="mono">${esc(fmtDur(v.duration)||'—')}</span>
+    <span class="mono hide-s">${esc(v.date||'—')}</span></div>`;
+}
+function bindRows(root=document){
+  root.querySelectorAll('[data-id]').forEach(el=>{
+    el.onclick=()=>openSheet(el.dataset.id);
+    el.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); openSheet(el.dataset.id);} };
+  });
+}
+
+/* catalog */
+const LOGO_W='data:image/png;base64,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';
+const LOGO_P='data:image/png;base64,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';
+const CAT = {quote:{rows:[], period:'', note:'• 금액은 VAT 별도입니다.\n• 교육 인원, 이용 기간, 제공 방식(LMS 탑재·링크 제공)에 따라 달라질 수 있습니다.\n• 본 견적은 발행일로부터 30일간 유효합니다.'}, contact:{company:'휴먼솔루션그룹', name:'', phone:'', email:'', address:'', web:''}, contactLoaded:false, f:{company:'',purpose:'',audience:'',comps:'',counts:['','',''],units:['편','편','편'],headcount:'',note:'',logo:''}, busy:false, ctl:null, err:'', stage:'', data:null, vt:{}, pdfBusy:false, pdfMsg:''};
+const CAT_COLORS = ['#55348b','#12867a','#f2b705','#2f6fb5','#d0573a'];
+const H2C_URL = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+const JSPDF_URL = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+function catVideos(){
+  const seen=new Set();
+  return S.videos.filter(v=>v.kind==='H' && v.status==='사용' && !seen.has(v.code) && seen.add(v.code))
+    .sort((a,b)=>a.code.localeCompare(b.code,'en',{numeric:true}));
+}
+const catByCode = () => Object.fromEntries(catVideos().map(v=>[v.code,v]));
+const vtext = (v,k) => (CAT.vt[v.code] && CAT.vt[v.code][k]!=null) ? CAT.vt[v.code][k] : (v[k]||'');
+function vtags(v){
+  const first=(v.summary||'').split('\n')[0]||'';
+  return first.split(/[,，·]/).map(s=>s.trim()).filter(s=>s && s.length<=18).slice(0,2);
+}
+function catSpecs(){
+  return CAT.f.counts.map((x,i)=>{ const u=CAT.f.units[i]||'편', n=parseFloat(String(x||'').replace(',','.'));
+    if (!(n>0)) return null;
+    if (u==='시간') return n<=20 ? {unit:'시간', n, min:Math.round(n*60)} : null;
+    return n<=60 ? {unit:'편', n:Math.round(n)} : null; }).filter(Boolean);
+}
+const catCounts = catSpecs;
+const specText = s => s.unit==='시간' ? `총 길이 약 ${s.min}분(${s.n}시간) — 편수는 길이에 맞게 정한다` : `${s.n}편`;
+const specLabel = s => s.unit==='시간' ? `${s.n}시간` : `${s.n}편`;
+function catPrompt(list, cut){
+  const f=CAT.f, counts=catCounts();
+  const lines=list.map(v=>{
+    const mods=videoModules(v).join(', ');
+    const sum=(v.summary||'').replace(/\s+/g,' ').trim().slice(0,cut);
+    return `${v.code} | ${v.title} | ${fmtDur(v.duration)||'?'} | 모듈: ${mods||'-'} | 대상: ${v.target||'-'} | ${sum}`;
+  }).join('\n');
+  return `너는 HSG(휴먼솔루션그룹)의 교육 컨설턴트다. 고객사에 보낼 마이크로러닝 "추천 영상 카탈로그"를 구성한다.
+아래 "영상 목록"에 있는 판매용(H) 영상만 사용한다.
+
+고객사: ${f.company||'(미입력)'}
+교육 목적: ${f.purpose||'(미입력)'}
+교육 대상: ${f.audience||'(미입력)'}${f.headcount?` (교육 인원 ${f.headcount}명)`:''}
+다룰 역량: ${f.comps.trim()||'(교육 목적에 맞게 2~3개를 네가 정한다)'}
+추천안: ${counts.map((s,i)=>`추천 ${i+1} = ${specText(s)}`).join(', ')}
+참고 사항: ${f.note||'없음'}
+
+규칙:
+- 영상 목록에 있는 번호만 쓴다. 한 추천안 안에서 같은 영상을 두 번 쓰지 않는다. 추천안끼리는 겹쳐도 된다.
+- 편수로 지정한 추천안은 그 편수와 정확히 같게 한다.
+- 시간으로 지정한 추천안은 고른 영상 길이의 합이 목표 시간의 ±5분 안에 들게 한다(영상 목록의 길이를 더해 확인한다). 이런 추천안에는 reserve(예비 영상)도 6~10편 넣는다. 예비 영상은 이 추천안에 아직 없는 영상이고, 목표 시간을 맞출 때 추가로 쓴다.
+- competencies는 2~4개 역량 이름(짧은 명사, 예: "리더십", "조직관리", "갈등관리")이다. 다룰 역량이 주어지면 그 이름을 그대로 쓴다.
+- 각 추천안의 groups는 competencies 순서대로 나누고, 각 영상은 가장 잘 맞는 역량 하나에만 넣는다. 영상이 없는 역량은 빼도 된다.
+- 교육 목적과 대상에 가장 맞는 영상을 고른다. 추천안이 여러 개면 성격이 다르게 짠다(예: 폭넓은 통합형, 특정 주제 심화형, 짧은 핵심형).
+- name: 과정명, 22자 이내 (예: "리더십·조직관리·갈등관리 통합 과정")
+- type: 2~3자 + "형" (예: "통합형", "심화형", "핵심형")
+- typeDesc: 45~65자, "~에 적합합니다"로 끝나는 한 문장
+- headline: 28자 이내, type 단어로 끝나는 구 (예: "관리자 역량을 폭넓게 다루는 통합형")
+- feature: 추천 목록의 특징, 70~110자, 합니다체
+- reason: 이렇게 선정한 이유, 80~130자, 합니다체, 실제 고른 영상의 주제를 언급
+- tags: 선정 이유를 요약하는 짧은 명사구 3개 (# 없이)
+- fit: 이 추천안이 적합한 경우, 30~50자, "~할 때"로 끝냄
+- fitNote: fit을 보충하는 한 문장, 40~70자, 합니다체
+- coverLine: 표지 부제, 예: "리더십 · 조직관리 · 갈등관리 역량별 큐레이션"
+- 사실이 아닌 수치나 효과를 지어내지 않는다.
+
+다음 JSON 하나로만 답하라:
+{"coverLine":"","competencies":[""],"plans":[{"name":"","type":"","typeDesc":"","headline":"","feature":"","reason":"","tags":["","",""],"fit":"","fitNote":"","groups":[{"competency":"","codes":["H025"]}],"reserve":[{"competency":"","code":"H030"}]}]}
+plans 배열은 추천 1부터 순서대로 쓴다. reserve는 시간으로 지정한 추천안에만 넣고, 나머지는 빈 배열로 둔다.
+
+영상 목록 (번호 | 제목 | 길이 | 모듈 | 추천 대상 | 내용 요약):
+${lines}`;
+}
+function catClean(data){
+  const by=catByCode();
+  const comps=(Array.isArray(data?.competencies)?data.competencies:[]).map(x=>String(x||'').trim()).filter(Boolean).slice(0,5);
+  const specs=catSpecs();
+  const plans=(Array.isArray(data?.plans)?data.plans:[]).slice(0,specs.length).map((p,pi)=>{
+    const used=new Set();
+    const groups=(Array.isArray(p?.groups)?p.groups:[]).map(g=>({competency:String(g?.competency||'').trim()||'기타',
+      codes:(Array.isArray(g?.codes)?g.codes:[]).map(c=>String(c||'').trim().toUpperCase()).filter(c=>by[c] && !used.has(c) && used.add(c))})).filter(g=>g.codes.length);
+    const s=k=>String(p?.[k]||'').trim();
+    return {name:s('name'), type:s('type'), typeDesc:s('typeDesc'), headline:s('headline'), feature:s('feature'), reason:s('reason'),
+      tags:(Array.isArray(p?.tags)?p.tags:[]).map(t=>String(t||'').replace(/^#/,'').trim()).filter(Boolean).slice(0,3), fit:s('fit'), fitNote:s('fitNote'), groups, spec:specs[pi],
+      reserve:(Array.isArray(p?.reserve)?p.reserve:[]).map(r=>({competency:String(r?.competency||'').trim()||'기타', code:String(r?.code||'').trim().toUpperCase()})).filter(r=>by[r.code] && !used.has(r.code))};
+  }).filter(p=>p.groups.length);
+  plans.forEach(p=>{ if (p.spec?.unit==='시간') fitTime(p, by, comps); delete p.reserve; });
+  plans.forEach(p=>p.groups.forEach(g=>{ if(!comps.includes(g.competency)) comps.push(g.competency); }));
+  return {coverLine:String(data?.coverLine||'').trim() || comps.join(' · ')+' 역량별 큐레이션', competencies:comps, plans};
+}
+function fitTime(p, by, comps){
+  const target=p.spec.min*60, tol=300, d=c=>Math.max(0,secs(by[c].duration));
+  let total=p.groups.reduce((s,g)=>s+g.codes.reduce((a,c)=>a+d(c),0),0);
+  while (total>target+tol){
+    let best=null;
+    p.groups.forEach(g=>g.codes.forEach(c=>{ const gap=Math.abs(total-d(c)-target); if(!best||gap<best.gap) best={g,c,gap}; }));
+    if (!best || best.gap>=Math.abs(total-target)) break;
+    best.g.codes=best.g.codes.filter(x=>x!==best.c); total-=d(best.c);
+  }
+  while (total<target-tol && p.reserve.length){
+    let bi=-1, bg=Infinity;
+    p.reserve.forEach((r,i)=>{ const gap=Math.abs(total+d(r.code)-target); if(gap<bg){bg=gap;bi=i;} });
+    if (bg>=Math.abs(total-target)) break;
+    const r=p.reserve.splice(bi,1)[0];
+    let g=p.groups.find(x=>x.competency===r.competency);
+    if (!g){ g={competency:r.competency, codes:[]}; p.groups.push(g); if(!comps.includes(r.competency)) comps.push(r.competency);
+      p.groups.sort((a,b)=>comps.indexOf(a.competency)-comps.indexOf(b.competency)); }
+    g.codes.push(r.code); total+=d(r.code);
+  }
+  p.groups=p.groups.filter(g=>g.codes.length);
+}
+async function catFillTexts(){
+  const by=catByCode();
+  const codes=[...new Set(CAT.data.plans.flatMap(p=>p.groups.flatMap(g=>g.codes)))].filter(c=>!(by[c].target&&by[c].pitch) && !(CAT.vt[c]?.target && CAT.vt[c]?.pitch));
+  if (!codes.length || !S.sample) return;
+  CAT.stage=`영상 ${codes.length}편의 추천 대상과 요약을 쓰는 중입니다…`; render();
+  const list=codes.map(c=>`${c} | ${by[c].title} | ${(by[c].summary||'').replace(/\s+/g,' ').slice(0,500)}`).join('\n');
+  const prompt=`아래 리더십 교육 영상마다 카탈로그 문구 두 가지를 한국어로 써라.
+- target(추천 대상): 15~35자 명사구, "리더"/"팀장"/"구성원"/"직장인" 같은 사람 명사로 끝남
+- pitch(요약): 두 문장 90~150자, 합니다체. 첫 문장은 필요나 문제, 둘째 문장은 "본 영상에서는"으로 시작해 배우는 내용을 쓰고 "학습합니다." 또는 "소개합니다."로 끝냄
+- 제목과 요약에 있는 내용만 쓴다.
+JSON 하나로만 답하라: {"H025":{"target":"","pitch":""}}
+영상 (번호 | 제목 | 내용 요약):
+${list}`;
+  try{
+    const out=await S.sample.json(prompt,{modelTier:'default', cache:false, signal:CAT.ctl?.signal});
+    for (const c of codes){ const o=out?.[c]; if(!o?.target||!o?.pitch) continue;
+      CAT.vt[c]={target:String(o.target), pitch:String(o.pitch)};
+      if (S.canWrite){ const v=by[c]; S.db.doc('videos/'+v.id).update({target:String(o.target), pitch:String(o.pitch)}).catch(()=>{}); }
+    }
+  }catch(e){ if(e?.code==='cancelled') throw e; }
+}
+async function runCatalog(){
+  if (CAT.busy) return;
+  if (!catSpecs().length){ CAT.err='추천안의 편수나 시간을 하나 이상 넣어 주세요. (시간은 20시간, 편수는 60편까지)'; render(); return; }
+  if (!CAT.f.purpose.trim() && !CAT.f.comps.trim()){ CAT.err='교육 목적이나 다룰 역량 중 하나는 넣어 주세요.'; render(); return; }
+  if (!S.sample){ CAT.err='이 화면에서는 AI 기능을 쓸 수 없습니다. claude.ai에 로그인한 상태로 열어 주세요.'; render(); return; }
+  const list=catVideos();
+  let cut=260, prompt=catPrompt(list,cut);
+  while (new TextEncoder().encode(prompt).length>240000 && cut>40){ cut-=30; prompt=catPrompt(list,cut); }
+  CAT.busy=true; CAT.err=''; CAT.data=null; CAT.vt={}; CAT.stage='AI가 추천안을 구성하는 중입니다… 보통 30초~1분 걸립니다'; CAT.ctl=new AbortController(); render();
+  try{
+    const data=await S.sample.json(prompt,{modelTier:'default', signal:CAT.ctl.signal, cache:false,
+      onText:({text})=>{ const el=$('#catLive'); if(el) el.textContent=`추천안 작성 중… ${text.length.toLocaleString()}자`; }});
+    CAT.data=catClean(data);
+    if (!CAT.data.plans.length) throw {code:'empty_completion'};
+    await catFillTexts();
+  }catch(e){
+    CAT.data = e?.code==='cancelled'? null : CAT.data;
+    CAT.err = e?.code==='cancelled' ? '' : e?.code==='not_granted' ? 'AI 사용이 허용되지 않았습니다. 페이지의 권한 메뉴에서 허용한 뒤 다시 시도해 주세요.'
+      : e?.code==='rate_limited' ? '요청이 많습니다. 잠시 후 다시 시도해 주세요.'
+      : (e?.code==='invalid_json'||e?.code==='empty_completion') ? '추천 결과를 읽지 못했습니다. 다시 시도해 주세요.' : '카탈로그를 만들지 못했습니다. 잠시 후 다시 시도해 주세요.';
+  }finally{ CAT.busy=false; CAT.ctl=null; CAT.stage=''; render(); }
+}
+function planInfo(p){
+  const by=catByCode();
+  const vids=p.groups.flatMap(g=>g.codes.map(c=>({v:by[c], comp:g.competency}))).filter(x=>x.v);
+  const sec=vids.reduce((s,x)=>s+Math.max(0,secs(x.v.duration)),0);
+  return {vids, n:vids.length, min:Math.round(sec/60)};
+}
+const compColor = c => CAT_COLORS[Math.max(0,CAT.data.competencies.indexOf(c)) % CAT_COLORS.length];
+const ed = (edit, key) => edit? ` contenteditable="true" spellcheck="false" data-k="${esc(key)}"` : '';
+const pg = n => String(n).padStart(2,'0');
+function slideFoot(n, label){
+  return `<div class="sl-foot"><img src="${LOGO_P}" alt="HSG 휴먼솔루션그룹" class="sl-logo"><span>${esc(label||'Copyright ⓒ HSG All Rights Reserved')} · <b>${pg(n)}</b></span></div>`;
+}
+const ROWH={};
+function measureRow(cols, code, title){
+  const key=cols+'|'+title; if (ROWH[key]) return ROWH[key];
+  let m=document.getElementById('catMeasure');
+  if (!m){ m=document.createElement('div'); m.id='catMeasure'; m.className='sl'; m.style.cssText='position:fixed;left:-30000px;top:0;height:auto'; document.body.appendChild(m); }
+  m.innerHTML=`<div class="ls-grid" style="grid-template-columns:repeat(${cols},minmax(0,1fr));margin:0;padding:0 56px"><div class="card ls-col"><div class="ls-row"><b>${esc(code)}</b><span>${esc(title)}</span></div></div></div>`;
+  const h=m.querySelector('.ls-row').getBoundingClientRect().height || 52;
+  return ROWH[key]=Math.ceil(h)+1;
+}
+document.fonts?.addEventListener?.('loadingdone',()=>{ for (const k in ROWH) delete ROWH[k]; if(S.view==='catalog' && CAT.data) render(); });
+function slidesHtml(edit){
+  const D=CAT.data, f=CAT.f, out=[]; let n=1;
+  const plans=D.plans.map(p=>({p, ...planInfo(p)}));
+  // cover
+  const allV=[...new Map(plans.flatMap(x=>x.vids).map(x=>[x.v.code,x])).values()];
+  const withImg=allV.filter(x=>x.v.thumb);
+  const tiles=(withImg.length>=6? withImg : [...withImg, ...allV.filter(x=>!x.v.thumb)]).slice(0,10);
+  out.push(`<div class="sl sl-cover">
+    <div class="cv-l">
+      <div class="cv-client">${f.logo?`<img src="${f.logo}" alt="">`:`<span>${esc(f.company||'고객사')}</span>`}</div>
+      <div class="cv-bar"></div>
+      <div class="cv-kicker"${ed(edit,'f.kicker')}>${esc(f.kicker ?? `${f.audience?f.audience+' 대상 ':''}마이크로러닝`)}</div>
+      <div class="cv-title">추천 영상<br>카탈로그</div>
+      <div class="cv-sub"><span${ed(edit,'data.coverLine')}>${esc(D.coverLine)}</span><br>${plans.map((_,i)=>`추천 ${i+1}`).join(' · ')}</div>
+      <img class="cv-hsg" src="${LOGO_W}" alt="HSG 휴먼솔루션그룹">
+    </div>
+    <div class="cv-r">${tiles.map((x,i)=> x.v.thumb? `<div class="cv-tile img"><img src="${thumbUrl(x.v)}" alt=""></div>` : `<div class="cv-tile t${i%4}"><b>${esc(x.v.code)}</b><span>${esc(x.v.title)}</span></div>`).join('')}</div>
+  </div>`);
+  // overview
+  n++;
+  const maxG=Math.max(1,...plans.flatMap(x=>x.p.groups.map(g=>g.codes.length)));
+  const nWord=['','','두','세','네','다섯'][plans.length]||plans.length;
+  out.push(`<div class="sl sl-light"><h2 class="sl-h1">${plans.length>1?`${nWord} 가지 추천안`:'추천안'} 한눈에 보기</h2>
+    <div class="ov-grid" style="grid-template-columns:repeat(${plans.length},minmax(0,1fr))">${plans.map((x,i)=>`<div class="card ov-card${x.p.groups.length>3?' many':''}">
+      <span class="badge">추천 ${i+1}${x.p.spec?.unit==='시간'?` · ${esc(specLabel(x.p.spec))} 과정`:''}</span>
+      <div class="ov-name"${ed(edit,`data.plans.${i}.name`)}>${esc(x.p.name)}</div>
+      <div class="ov-num"><b>${x.n}</b><em>편</em><span>· 약 ${x.min}분</span></div>
+      <div class="ov-bars">${x.p.groups.map(g=>`<div class="ov-bar"><span>${esc(g.competency)}</span><i style="width:${(g.codes.length/maxG*100).toFixed(1)}%;background:${compColor(g.competency)}"></i><b>${g.codes.length}</b></div>`).join('')}</div>
+      <p class="ov-desc"><b${ed(edit,`data.plans.${i}.type`)}>${esc(x.p.type)}</b> · <span${ed(edit,`data.plans.${i}.typeDesc`)}>${esc(x.p.typeDesc)}</span></p>
+    </div>`).join('')}</div>${slideFoot(n)}</div>`);
+  plans.forEach((x,i)=>{
+    const p=x.p, legend=`<div class="legend">${p.groups.map(g=>`<span><i style="background:${compColor(g.competency)}"></i>${esc(g.competency)}</span>`).join('')}</div>`;
+    // list (paginate so columns never overflow)
+    { const by=catByCode(), cols=Math.max(p.groups.length,2);
+      const rowH=c=>measureRow(cols, c, by[c].title);
+      const chunks=p.groups.map(g=>{ const out=[[]]; let h=0; g.codes.forEach(c=>{ const r=rowH(c); if(h+r>404 && out[out.length-1].length){ out.push([]); h=0; } out[out.length-1].push(c); h+=r; }); return out; });
+      const pages=Math.max(...chunks.map(c=>c.length));
+      for (let k=0;k<pages;k++){
+        n++;
+        const gs=p.groups.map((g,gi)=>({g, codes:chunks[gi][k]||[]})).filter(x=>x.codes.length);
+        out.push(`<div class="sl sl-light">
+      <div class="sl-head"><div><div class="kick"><span class="badge">추천 ${i+1}</span>주제별 추천 영상 리스트${pages>1?` (${k+1}/${pages})`:''}</div><h2 class="sl-h1"${ed(edit&&k===0,`data.plans.${i}.name`)}>${esc(p.name)}</h2></div>
+        <div class="big"><b>${x.n}</b><em>편</em><small>약</small><b>${x.min}</b><em>분</em></div></div>
+      <div class="ls-grid" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">${gs.map(({g,codes})=>`<div class="card ls-col" style="--c:${compColor(g.competency)}">
+        <div class="ls-h"><span><i></i>${esc(g.competency)}</span><b>${g.codes.length}편</b></div>
+        ${codes.map(c=>`<div class="ls-row"><b>${esc(c)}</b><span>${esc(by[c].title)}</span>${edit?`<button type="button" class="rm" data-rmv="${i}|${esc(c)}" title="이 영상 빼기" aria-label="${esc(c)} 빼기">×</button>`:''}</div>`).join('')}
+      </div>`).join('')}</div>${slideFoot(n)}</div>`);
+      }
+    }
+    // reason
+    n++;
+    out.push(`<div class="sl sl-light">
+      <div class="sl-head"><div><div class="kick"><span class="badge">추천 ${i+1}</span>추천안의 특징과 선정 이유</div><h2 class="sl-h1"><span${ed(edit,`data.plans.${i}.headline`)}>${esc(p.headline||p.type)}</span></h2></div>
+        <div class="rs-meta"><b>${x.n}편 · 약 ${x.min}분</b><div class="legend">${p.groups.map(g=>`<span><i style="background:${compColor(g.competency)}"></i>${esc(g.competency)} ${g.codes.length}</span>`).join('')}</div></div></div>
+      <div class="rs-grid">
+        <div class="card rs-card"><div class="rs-no">01</div><h3>추천 목록의 특징</h3><p${ed(edit,`data.plans.${i}.feature`)}>${esc(p.feature)}</p></div>
+        <div class="card rs-card"><div class="rs-no">02</div><h3>이렇게 선정한 이유</h3><p${ed(edit,`data.plans.${i}.reason`)}>${esc(p.reason)}</p>
+          <div class="tags">${p.tags.map((t,ti)=>`<span${ed(edit,`data.plans.${i}.tags.${ti}`)}>#${esc(t)}</span>`).join('')}</div></div>
+        <div class="card rs-card dark"><div class="rs-no">03</div><h3>이런 경우에 적합합니다</h3><p class="fit"${ed(edit,`data.plans.${i}.fit`)}>${esc(p.fit)}</p><p class="note"${ed(edit,`data.plans.${i}.fitNote`)}>${esc(p.fitNote)}</p></div>
+      </div>${slideFoot(n)}</div>`);
+    // details
+    const pages=Math.ceil(x.vids.length/3);
+    for (let k=0;k<pages;k++){
+      n++;
+      out.push(`<div class="sl sl-light sl-dt">
+        <div class="dt-head"><h2>추천 ${i+1} <i>|</i> ${esc(p.name)}</h2>${legend}</div>
+        <div class="dt-grid">${x.vids.slice(k*3,k*3+3).map(({v,comp})=>{ const col=compColor(comp), tg=vtags(v); return `<div class="card dt-card">
+          <div class="dt-vis${v.thumb?' has-img':''}" style="--c:${col}">${v.thumb?`<img src="${thumbUrl(v)}" alt="">`:`<span class="dt-code">${esc(v.code)}</span>`}<span class="dt-comp">${esc(comp)}</span></div>
+          <div class="dt-meta">${v.thumb?`<span class="cb">${esc(v.code)}</span>`:''}<span class="md">${esc(videoModules(v)[0]||comp)}</span><b>${esc(fmtDur(v.duration)||'')}</b></div>
+          <div class="dt-title">${esc(v.title)}</div>
+          <div class="dt-target"><b>추천 대상</b><span${ed(edit,`vt.${v.code}.target`)}>${esc(vtext(v,'target'))}</span></div>
+          ${tg.length?`<div class="tags">${tg.map(t=>`<span>#${esc(t)}</span>`).join('')}</div>`:''}
+          <p class="dt-pitch"${ed(edit,`vt.${v.code}.pitch`)}>${esc(vtext(v,'pitch'))}</p>
+        </div>`; }).join('')}</div>${slideFoot(n, `영상 상세 카탈로그 ${k+1} / ${pages}`)}</div>`);
+    }
+  });
+  // quote
+  n++;
+  const Q=CAT.quote; plans.forEach((_,i)=>{ Q.rows[i] ||= {price:'', amount:''}; });
+  const ph=(edit,txt)=>edit?` data-ph="${esc(txt)}"`:'';
+  out.push(`<div class="sl sl-light">
+    <div class="sl-head"><div><div class="kick"><span class="badge">견적</span>추천안별 예상 비용</div><h2 class="sl-h1">견적 안내</h2></div>
+      <div class="qt-meta"><span>수신 · <b>${esc(f.company||'고객사')}</b> 귀하</span><span>견적일 · ${today()}</span></div></div>
+    <div class="card qt-table"><div class="qt-row qt-th"><span>구분</span><span>과정</span><span>구성</span><span>교육 인원</span><span>이용 기간</span><span>단가</span><span>금액</span></div>
+      ${plans.map((x,i)=>`<div class="qt-row"><span><span class="badge">추천 ${i+1}</span></span><span class="qt-name">${esc(x.p.name)}</span><span>${x.n}편 · 약 ${x.min}분</span>
+        <span>${f.headcount?esc(f.headcount)+'명':'—'}</span>
+        <span${ed(edit,'quote.period')}${ph(edit,'예: 3개월')}>${esc(Q.period)}</span>
+        <span${ed(edit,`quote.rows.${i}.price`)}${ph(edit,'1인당 금액')}>${esc(Q.rows[i].price)}</span>
+        <b class="qt-amt"${ed(edit,`quote.rows.${i}.amount`)}${ph(edit,'금액 입력')}>${esc(Q.rows[i].amount||(edit?'':'별도 협의'))}</b></div>`).join('')}
+    </div>
+    <div class="qt-note"${ed(edit,'quote.note')}>${esc(Q.note)}</div>
+    ${slideFoot(n)}</div>`);
+  // contact
+  const C=CAT.contact, ci=(k,label,phx)=>`<div class="ct-row"><span>${label}</span><b${ed(edit,'contact.'+k)}${ph(edit,phx)}>${esc(C[k])}</b></div>`;
+  out.push(`<div class="sl sl-cover sl-end">
+    <div class="cv-l"><div class="cv-bar" style="margin-top:96px"></div><div class="cv-kicker">도입 문의</div><div class="cv-title" style="font-size:84px">감사합니다</div>
+      <div class="cv-sub">${esc(f.company||'고객사')}의 성장을 위한 맞춤 영상 교육을 함께 설계하겠습니다.</div>
+      <img class="cv-hsg" src="${LOGO_W}" alt="HSG 휴먼솔루션그룹"></div>
+    <div class="ct-card">${ci('company','회사','회사명')}${ci('name','담당자','이름 · 직함')}${ci('phone','전화','02-000-0000')}${ci('email','이메일','name@hsg.or.kr')}${ci('address','주소','회사 주소')}${ci('web','홈페이지','www.example.com')}</div>
+  </div>`);
+  return out;
+}
+let ctTimer=null;
+function saveContact(){ clearTimeout(ctTimer); ctTimer=setTimeout(()=>{ if(S.canWrite && S.db) S.db.doc('settings/catalog').set({contact:CAT.contact, note:CAT.quote.note}).catch(()=>{}); }, 600); }
+function loadContact(){ if(CAT.contactLoaded || !S.db) return; CAT.contactLoaded=true;
+  S.db.doc('settings/catalog').get().then(s=>{ if(!s.exists) return; const d=s.data()||{}; if(d.contact) Object.assign(CAT.contact,d.contact); if(d.note) CAT.quote.note=d.note; if(S.view==='catalog' && CAT.data) render(); }).catch(()=>{}); }
+function catSet(key, val){
+  const parts=key.split('.');
+  if (parts[0]==='vt'){ const c=parts[1]; CAT.vt[c]={...(CAT.vt[c]||{}), [parts[2]]:val}; return; }
+  if (parts[0]==='f'){ CAT.f[parts[1]]=val; return; }
+  if (parts[0]==='contact'){ CAT.contact[parts[1]]=val; saveContact(); return; }
+  if (key==='quote.note'){ CAT.quote.note=val; saveContact(); return; }
+  let o=CAT; for (let i=0;i<parts.length-1;i++){ o=o[parts[i]]; if(o==null) return; }
+  const last=parts[parts.length-1];
+  if (/^tags$/.test(parts[parts.length-2])) o[+last]=val.replace(/^#/,''); else o[last]=val;
+}
+function fitSlides(){
+  document.querySelectorAll('.sl-wrap').forEach(w=>{ const s=w.clientWidth/1280; w.style.setProperty('--s', s); w.style.height=(720*s)+'px'; });
+}
+window.addEventListener('resize', ()=>{ if(S.view==='catalog') fitSlides(); });
+function viewCatalog(){
+  loadContact();
+  const f=CAT.f, D=CAT.data;
+  const total = D ? D.plans.reduce((s,p)=>s+planInfo(p).n,0) : 0;
+  $('#app').innerHTML = `<h1>영상 카달로그</h1><p class="sub">고객사 정보를 넣으면 판매용(H) 영상으로 추천안을 짜고, 카탈로그 PDF를 만들어 드립니다.</p>
+  <form class="card cat-form" id="catForm" autocomplete="off">
+    <div class="form">
+      <label><span class="label">회사명</span><input id="cCompany" value="${esc(f.company)}" placeholder="예: KB골든라이프케어"></label>
+      <div class="cat-aud"><label><span class="label">대상</span><input id="cAudience" value="${esc(f.audience)}" placeholder="예: 관리자, 부장급"></label>
+        <label><span class="label">인원</span><span class="cat-hc"><input id="cHead" inputmode="numeric" value="${esc(f.headcount)}" placeholder="예: 30"><em>명</em></span></label></div>
+      <label class="full"><span class="label">교육 목적</span><textarea id="cPurpose" rows="2" placeholder="예: 관리자의 리더십과 조직관리, 갈등관리 역량을 함께 높이기">${esc(f.purpose)}</textarea></label>
+      <label class="full"><span class="label">다룰 역량 <span class="hint">쉼표로 구분 · 비워 두면 AI가 정합니다</span></span><input id="cComps" value="${esc(f.comps)}" placeholder="예: 리더십, 조직관리, 갈등관리"></label>
+      <div class="full"><span class="label">추천안별 분량 <span class="hint">편수 또는 시간(예: 2시간, 1.5시간)으로 지정 · 비워 둔 추천안은 만들지 않습니다</span></span>
+        <div class="cat-counts">${[0,1,2].map(i=>`<div class="cc"><span>추천 ${i+1}</span><div class="cc-in"><input id="cCount${i}" inputmode="decimal" value="${esc(f.counts[i]||'')}" placeholder="${(f.units[i]||'편')==='시간'?['예: 2','예: 4','예: 1.5'][i]:['예: 20','예: 15','예: 10'][i]}" aria-label="추천 ${i+1} 분량"><select id="cUnit${i}" aria-label="추천 ${i+1} 단위">${opt('편','편',f.units[i]||'편')}${opt('시간','시간',f.units[i]||'편')}</select></div></div>`).join('')}</div></div>
+      <label class="full"><span class="label">참고 사항 (선택)</span><input id="cNote" value="${esc(f.note)}" placeholder="예: 2024년과 같은 편수로 한 안 포함, 신임 관리자 비중이 높음"></label>
+      <div class="full cat-logo"><span class="label">고객사 로고 (선택)</span>
+        <div class="actions">${f.logo?`<img src="${f.logo}" alt="고객사 로고" class="cat-logo-prev"><button type="button" id="cLogoRm" class="ghost">로고 빼기</button>`:''}<label class="btn" style="cursor:pointer">${f.logo?'다른 로고':'로고 파일 올리기'}<input type="file" id="cLogo" accept="image/png,image/jpeg,image/svg+xml,image/webp" hidden></label><span class="hint">흰 글씨 표지에 들어가니 흰색·투명 배경 PNG가 가장 잘 어울립니다. 없으면 회사명이 들어갑니다.</span></div></div>
+    </div>
+    <div class="actions">${CAT.busy?`<button type="button" id="catStop">멈추기</button><span class="hint" id="catLive">${esc(CAT.stage)}</span>`
+      :`<button class="primary" type="submit">${D?'추천안 다시 만들기':'카탈로그 만들기'}</button>`}</div>
+    ${CAT.err?`<div class="notice">${esc(CAT.err)}</div>`:''}
+  </form>
+  ${D?`<section class="cat-out">
+    <div class="cat-bar"><div><b>${D.plans.length}개 추천안 · 영상 ${total}편 · ${slidesHtml(false).length}장</b><span class="hint">글자를 눌러 바로 고칠 수 있고, 목록 장의 ×로 영상을 뺄 수 있습니다. 고친 내용은 이 카탈로그에만 적용됩니다.</span></div>
+      <div class="actions"><button type="button" class="primary" id="catPdf" ${CAT.pdfBusy?'disabled':''}>${CAT.pdfBusy?esc(CAT.pdfMsg||'PDF 만드는 중…'):'PDF 내려받기'}</button></div></div>
+    <div class="cat-slides">${slidesHtml(true).map((h,i)=>`<div class="sl-wrap" aria-label="${i+1}장"><div class="sl-scale">${h}</div></div>`).join('')}</div>
+  </section>`: CAT.busy?'':`<div class="empty">회사명, 대상, 교육 목적을 넣고 <b>카탈로그 만들기</b>를 누르세요. 표지, 추천안 비교, 추천안별 목록과 선정 이유, 영상 상세가 담긴 카탈로그를 만듭니다.</div>`}`;
+  const bind=(id,k)=>$('#'+id)?.addEventListener('input',e=>{ f[k]=e.target.value; });
+  $('#cHead')?.addEventListener('input',e=>{ f.headcount=e.target.value.replace(/[^0-9]/g,''); e.target.value=f.headcount; });
+  bind('cCompany','company'); bind('cAudience','audience'); bind('cPurpose','purpose'); bind('cComps','comps'); bind('cNote','note');
+  [0,1,2].forEach(i=>{ $('#cCount'+i)?.addEventListener('input',e=>{ f.counts[i]=e.target.value.replace(/[^0-9.]/g,''); });
+    $('#cUnit'+i)?.addEventListener('change',e=>{ f.units[i]=e.target.value; const el=$('#cCount'+i); if(el) el.placeholder=e.target.value==='시간'?['예: 2','예: 4','예: 1.5'][i]:['예: 20','예: 15','예: 10'][i]; }); });
+  $('#cLogo')?.addEventListener('change',e=>{ const file=e.target.files[0]; if(!file) return; if(file.size>3e6){ toast('로고 파일은 3MB 이하로 올려 주세요'); return; }
+    const r=new FileReader(); r.onload=()=>{ f.logo=r.result; render(); }; r.readAsDataURL(file); });
+  $('#cLogoRm')?.addEventListener('click',()=>{ f.logo=''; render(); });
+  $('#catForm').onsubmit=e=>{ e.preventDefault(); runCatalog(); };
+  $('#catStop')?.addEventListener('click',()=>CAT.ctl?.abort());
+  $('#catPdf')?.addEventListener('click',catPdf);
+  document.querySelectorAll('.cat-slides [data-k]').forEach(el=>{
+    el.addEventListener('input',()=>catSet(el.dataset.k, el.innerText.trim()));
+    el.addEventListener('keydown',e=>{ if(e.key==='Enter' && !e.shiftKey && el.dataset.k!=='quote.note'){ e.preventDefault(); el.blur(); } });
+    el.addEventListener('blur',()=>{ if(el.dataset.k.startsWith('data.plans') && el.dataset.k.endsWith('.name')) render(); });
+  });
+  document.querySelectorAll('[data-rmv]').forEach(b=>b.onclick=()=>{
+    const [pi,c]=b.dataset.rmv.split('|'); const p=CAT.data.plans[+pi];
+    p.groups.forEach(g=>{ g.codes=g.codes.filter(x=>x!==c); }); p.groups=p.groups.filter(g=>g.codes.length);
+    if (!p.groups.length) CAT.data.plans.splice(+pi,1);
+    if (!CAT.data.plans.length) CAT.data=null;
+    render();
+  });
+  fitSlides();
+}
+function loadScript(src){ return new Promise((ok,no)=>{ const s=document.createElement('script'); s.src=src; s.onload=()=>ok(); s.onerror=()=>no(new Error('script')); document.head.appendChild(s); }); }
+async function catPdf(){
+  if (!CAT.data || CAT.pdfBusy) return;
+  if (!S.downloads){ toast('이 화면에서는 파일을 내려받을 수 없습니다'); return; }
+  const btn=()=>$('#catPdf');
+  const msg=t=>{ CAT.pdfMsg=t; const b=btn(); if(b){ b.textContent=t; b.disabled=true; } };
+  CAT.pdfBusy=true; msg('PDF 준비 중…');
+  let host=null;
+  try{
+    if (!window.html2canvas) await loadScript(H2C_URL);
+    if (!window.jspdf) await loadScript(JSPDF_URL);
+    if (document.fonts?.ready) await document.fonts.ready;
+    host=document.createElement('div'); host.className='cat-capture';
+    host.innerHTML=slidesHtml(false).join(''); document.body.appendChild(host);
+    await Promise.all([...host.querySelectorAll('img')].map(im=>im.complete? Promise.resolve() : new Promise(r=>{ im.onload=im.onerror=r; })));
+    const slides=[...host.querySelectorAll('.sl')];
+    const pdf=new window.jspdf.jsPDF({orientation:'landscape', unit:'px', format:[1280,720], hotfixes:['px_scaling'], compress:true});
+    for (let i=0;i<slides.length;i++){
+      msg(`PDF 만드는 중… ${i+1}/${slides.length}`);
+      const c=await window.html2canvas(slides[i],{scale:1.6, backgroundColor:'#ffffff', logging:false, width:1280, height:720, windowWidth:1280});
+      if (i) pdf.addPage([1280,720],'landscape');
+      pdf.addImage(c.toDataURL('image/jpeg',0.9),'JPEG',0,0,1280,720,undefined,'FAST');
+    }
+    host.remove(); host=null;
+    msg('저장 확인 대기 중…');
+    const name=`HSG_영상카탈로그_${(CAT.f.company||'제안').replace(/[\\/:*?"<>|]/g,'')}_${today()}.pdf`;
+    await S.downloads.save({filename:name, data:pdf.output('blob')});
+    toast('PDF를 저장했습니다');
+  }catch(e){
+    toast(e?.code==='declined'? '저장을 취소했습니다' : e?.message==='script'? 'PDF 도구를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.' : 'PDF를 만들지 못했습니다. 다시 시도해 주세요.');
+  }finally{ host?.remove(); CAT.pdfBusy=false; CAT.pdfMsg=''; const b=btn(); if(b){ b.disabled=false; b.textContent='PDF 내려받기'; } }
+}
+
+/* modules */
+function viewModules(){
+  const keepScroll = document.querySelector('.mlist')?.scrollTop || 0;
+  const mods = S.modules.slice().sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+  if (!S.mod && mods.length) S.mod = mods[0].id;
+  const cur = S.links.filter(l=>l.module===S.mod).sort((a,b)=>a.pos-b.pos);
+  const byCode={}; S.videos.forEach(v=>{ if(!byCode[v.code] || v.status==='사용') byCode[v.code]=v; });
+  const total = cur.reduce((s,l)=>{ const v=byCode[l.code]; return s+(v? Math.max(0,secs(v.duration)):0); },0);
+  $('#app').innerHTML = `<h1>모듈별 보기</h1><p class="sub">표준 영상 모듈 리스트 V.4 기준 ${S.modules.length}개 강의. 강의를 고르면 편성 순서대로 영상을 보여 줍니다.</p>
+  <div class="mgrid">
+    <div class="mlist" role="list">${(()=>{const act=new Set(S.videos.filter(v=>v.status==='사용').map(v=>v.code));return mods.map(m=>{const n=S.links.filter(l=>l.module===m.id&&act.has(l.code)).length;return `<button aria-pressed="${m.id===S.mod}" data-m="${esc(m.id)}"><span>${esc(m.name)}</span><span class="n">${n}</span></button>`;}).join('');})()}</div>
+    <div style="min-width:0;display:flex;flex-direction:column;gap:10px">
+      <div class="resultbar"><h2>${esc(modName(S.mod))}</h2><span class="mono">${cur.length}편 · 총 ${fmtDur(String(Math.floor(total/60))+':'+String(total%60))||'0:00'}</span></div>
+      <div class="steps">${cur.map((l,i)=>{ const v=byCode[l.code];
+        const state = !l.code? '<span class="pill warn">미제작 · 번호 없음</span>' : !v? '<span class="pill bad">없는 번호</span>' : v.status==='제작 중'? (isTemp(l.code)?'':'<span class="pill warn">제작 중</span>') : v.status!=='사용'? `<span class="pill bad">${esc(v.status)}</span>`:'';
+        return `<div class="step${v?' clickable':''}" ${v?`data-id="${esc(v.id)}" tabindex="0"`:''}>
+          <span class="pos">${i+1}</span>
+          <span>${l.code? codeBadge(l.code, v?v.kind:l.code[0]) :'<span class="pill">—</span>'}</span>
+          <span class="t" style="min-width:0"><b style="font-weight:600">${esc(v? v.title : l.label)}</b> ${state}<br><span class="hint">${esc(v? [v.instructor, fmtDur(v.duration)].filter(Boolean).join(' · ') : (l.desc||'').split('\n')[0])}</span></span>
+          </div>`;}).join('') || '<div class="empty">이 강의에 연결된 영상이 없습니다. 영상 상세에서 이 모듈을 추가하면 여기에 나타납니다.</div>'}</div>
+    </div></div>`;
+  const ml = document.querySelector('.mlist'); if (ml) ml.scrollTop = keepScroll;
+  if (viewModules.focus){ document.querySelector(`[data-m="${viewModules.focus}"]`)?.focus({preventScroll:true}); viewModules.focus=null; }
+  document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{S.mod=b.dataset.m; viewModules.focus=b.dataset.m; render();});
+  bindRows($('#app'));
+}
+
+/* check */
+function viewCheck(c){
+  const items = S.videos.map(v=>({v, r:reasonsFor(v,c)})).filter(x=>x.r.length);
+  const lp = linkProblems();
+  const counts={}; items.forEach(x=>x.r.forEach(r=>counts[r]=(counts[r]||0)+1));
+  const order=['번호 형식 오류','중복 번호','링크 없음','강사 확인','모듈 미연결','정보 직접 입력','내용 요약 없음'];
+  const list = S.reason==='모듈 연결 오류'? [] : items.filter(x=>!S.reason || x.r.includes(S.reason));
+  $('#app').innerHTML = `<h1>확인 필요</h1><p class="sub">빠진 칸이나 맞지 않는 값이 있는 영상입니다. 항목을 열어 고치면 목록에서 사라집니다.</p>
+  <div class="reasons"><button aria-pressed="${!S.reason}" data-r="">전체 ${items.length}</button>${order.filter(r=>counts[r]).map(r=>`<button aria-pressed="${S.reason===r}" data-r="${esc(r)}">${esc(r)} ${counts[r]}</button>`).join('')}
+    ${lp.length?`<button aria-pressed="${S.reason==='모듈 연결 오류'}" data-r="모듈 연결 오류">모듈 연결 오류 ${lp.length}</button>`:''}</div>
+  ${S.reason==='모듈 연결 오류' ? `<div class="list">${lp.map(({l,why})=>`<div class="step"><span class="pos"></span><span>${l.code?`<span class="code ${esc(l.code[0])}">${esc(l.code)}</span>`:'—'}</span><span class="t" style="min-width:0"><b>${esc(modName(l.module))} ${l.pos}번</b> · ${esc(l.label)}<br><span class="pill bad">${esc(why)}</span></span></div>`).join('')}</div>`
+  : `<div class="list">${list.slice(0,S.shown).map(({v,r})=>`<div class="row" tabindex="0" data-id="${esc(v.id)}" style="grid-template-columns:92px minmax(0,1fr)">
+      <span><span class="code ${esc(v.kind)}">${esc(v.code)}</span></span>
+      <span class="t"><b>${esc(v.title)}</b><span class="pills" style="white-space:normal">${r.map(x=>`<span class="pill ${'warn'}">${esc(x)}</span>`).join('')}</span></span></div>`).join('') || '<div class="empty">확인할 영상이 없습니다.</div>'}</div>
+    ${list.length>S.shown?`<div class="more"><button id="more">${list.length-S.shown}개 더 보기</button></div>`:''}`}`;
+  document.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{S.reason=b.dataset.r;S.shown=60;render();});
+  $('#more')?.addEventListener('click',()=>{S.shown+=100;render();});
+  bindRows($('#app'));
+}
+
+/* add */
+const DRAFT0 = () => ({script:'', scriptName:'', thumbFile:null, thumbPrev:'', link:'',vtitle:'',instructor:'',duration:'',date:'',keymsg:'',summary:'',modules:[],client:'',course:'',prod:false,ptitle:'',pkind:'H'});
+const draft = DRAFT0();
+function parseVimeoTitle(t){
+  const m = String(t||'').trim().match(/^([PHCphc])\s*0*(\d{1,3})((?:-\d+)?)\s*[_\s]\s*(.+)$/);
+  if (!m) return {code:'', title:String(t||'').trim()};
+  return {code: m[1].toUpperCase()+String(+m[2]).padStart(3,'0')+m[3], title:m[4].trim()};
+}
+function linkId(u){ const m=String(u||'').match(/vimeo\.com\/(?:video\/)?(\d+)/); return m?m[1]:''; }
+function viewAdd(){
+  if (!draft.date) draft.date = today();
+  const p = parseVimeoTitle(draft.vtitle);
+  const dup = p.code && S.videos.filter(v=>v.code===p.code);
+  const dupLink = linkId(draft.link) && S.videos.find(v=>linkId(v.link)===linkId(draft.link));
+  const kindNow = draft.prod ? draft.pkind : (p.code[0]||'');
+  const canSave = S.canWrite && (draft.prod ? !!draft.ptitle.trim() : (p.code && linkId(draft.link)));
+  $('#app').innerHTML = `<h1>영상 등록</h1><p class="sub">비메오에 올린 영상의 링크와 제목을 붙여넣으면 일련번호와 제목을 나눠 채웁니다.</p>
+  ${!S.canWrite?'<div class="notice">이 페이지는 보기 전용으로 열려 있어 등록할 수 없습니다. 담당자에게 편집 권한을 요청해 주세요.</div>':''}
+  <div class="grid2">
+  <form class="card" id="addForm" autocomplete="off">
+    <div class="form">
+      <label class="full" style="display:flex;gap:8px;align-items:center;flex-direction:row"><input type="checkbox" id="aProd" style="width:auto" ${draft.prod?'checked':''}> <span>아직 편집 전이에요 <span class="hint">비메오 링크·일련번호 없이 '제작 중'으로 등록</span></span></label>
+      ${draft.prod?`<label class="full"><span class="label">제목 (가제)</span><input id="aPTitle" value="${esc(draft.ptitle)}" placeholder="편집 후 바뀌어도 괜찮습니다"></label>
+      <label><span class="label">구분</span><select id="aPKind">${opt('H','H 판매용',draft.pkind)}${opt('P','P 성과백신',draft.pkind)}${opt('C','C 기업맞춤',draft.pkind)}</select></label><span></span>`:`
+      <label class="full"><span class="label">비메오 링크</span><input id="aLink" placeholder="https://vimeo.com/1233608495" value="${esc(draft.link)}">
+        ${draft.link && !linkId(draft.link)?'<span class="hint" style="color:var(--bad)">비메오 영상 링크 형식이 아닙니다.</span>':''}
+        ${dupLink?`<span class="hint" style="color:var(--warn)">이미 등록된 링크입니다: ${esc(dupLink.code)} ${esc(dupLink.title)}</span>`:''}</label>
+      <label class="full"><span class="label">비메오 제목</span><input id="aTitle" placeholder="H209_흔들리지 않는 프로의 자존감" value="${esc(draft.vtitle)}">
+        <span class="hint">규칙: <span class="mono">번호_제목</span>. 비메오 화면에서 제목을 복사해 붙여넣으세요.</span></label>
+      <label><span class="label">일련번호 (자동)</span><input value="${esc(p.code)}" disabled>
+        ${draft.vtitle && !p.code?'<span class="hint" style="color:var(--bad)">번호 형식 오류: 제목 앞에 H209_ 처럼 번호를 붙여 주세요.</span>':''}
+        ${dup&&dup.length?`<span class="hint" style="color:var(--warn)">중복 번호: ${esc(p.code)}가 이미 ${dup.length}건 있습니다. 리뉴얼이면 그대로 저장하고, 기존 영상 상태를 바꿔 주세요.</span>`:''}</label>
+      <label><span class="label">제목 (자동)</span><input value="${esc(p.title)}" disabled></label>`}
+      <label><span class="label">강사</span><select id="aInst">${opt('','선택',draft.instructor)}${S.instructors.map(i=>opt(i.id,i.name?`${i.id} · ${i.name}`:i.id,draft.instructor)).join('')}</select></label>
+      <label><span class="label">길이 (분:초)</span><input id="aDur" placeholder="06:24" value="${esc(draft.duration)}" inputmode="numeric"></label>
+      <label><span class="label">제작일자</span><input id="aDate" type="date" value="${esc(draft.date)}"></label>
+      ${kindNow==='C'?`<label><span class="label">고객사</span><input id="aClient" value="${esc(draft.client)}"></label><label class="full"><span class="label">과정명</span><input id="aCourse" value="${esc(draft.course)}"></label>`:'<span></span>'}
+      <div class="full">${keymsgBlock('a', draft.summary)}</div>
+      <div class="full"><span class="label">모듈</span>${moduleChips('a', draft.modules)}</div>
+      <div class="full"><span class="label">스크립트 <span class="hint">영상 스크립트 파일 · 위 내용 요약에서 올린 스크립트도 여기에 저장됩니다</span></span><div id="aScriptSlot">${scriptSlot('a', draft.script, draft.scriptName, true)}</div></div>
+      <div class="full"><span class="label">썸네일 <span class="hint">강사 얼굴이 보이는 장면 1장 · 카달로그에 들어갑니다 · 나중에 넣어도 됩니다</span></span>
+        ${draft.thumbPrev?`<div class="thumb-box small"><img src="${draft.thumbPrev}" alt="썸네일 미리보기"><div class="thumb-act"><label class="btn">바꾸기<input type="file" id="aThumb" accept="image/*" hidden></label><button type="button" id="aThumbRm">빼기</button></div></div>`
+          :`<label class="thumb-empty small" id="aThumbDrop"><input type="file" id="aThumb" accept="image/*" hidden>${IMG_ICON}<b>썸네일 올리기</b><span>클릭하거나 이미지를 끌어다 놓으세요</span></label>`}</div>
+    </div>
+    <div class="actions"><button class="primary" type="submit" ${canSave?'':'disabled'}>${draft.prod?'제작 중으로 저장':'저장'}</button><button type="button" class="ghost" id="aClear">비우기</button></div>
+  </form>
+  <div class="card"><h2>등록 순서</h2>
+    <ol style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px">
+      <li>비메오에 <span class="mono">번호_제목</span> 규칙으로 업로드</li>
+      <li>링크와 제목을 여기에 붙여넣기</li><li>강사 선택, 길이 입력</li>
+      <li>스크립트를 올려 내용 요약 초안 받기 → 다듬기</li><li>모듈 선택 → 저장</li></ol>
+    <div class="notice info">편집 전 영상은 '아직 편집 전이에요'를 체크하고 가제와 모듈만 넣어 저장하세요. 편집이 끝나면 그 영상의 수정 화면에서 일련번호와 링크를 넣고 상태를 '사용'으로 바꾸면 됩니다.</div>
+    <div class="notice info">지금은 비메오 API 없이 쓰는 버전이라 길이와 제작일자는 직접 입력합니다. API 토큰이 연결되면 링크만으로 자동으로 채워집니다.</div>
+  </div></div>`;
+  const keep = (id, k) => { const el=$('#'+id); if(el) el.addEventListener('input',()=>{ draft[k]=el.value; }); };
+  keep('aDur','duration'); keep('aDate','date'); keep('aClient','client'); keep('aCourse','course');
+  $('#aInst').onchange=e=>draft.instructor=e.target.value;
+  for (const [id,k] of [['aLink','link'],['aTitle','vtitle']]) $('#'+id)?.addEventListener('change',e=>{ draft[k]=e.target.value.trim(); render(); });
+  $('#aProd').onchange=e=>{ draft.prod=e.target.checked; render(); };
+  $('#aPTitle')?.addEventListener('input',e=>{ draft.ptitle=e.target.value; const b=$('#addForm [type=submit]'); if(b) b.disabled=!(S.canWrite&&draft.ptitle.trim()); });
+  $('#aPKind')?.addEventListener('change',e=>{ draft.pkind=e.target.value; render(); });
+  const bindAS=()=>bindScriptSlot('a', draft.script, draft.scriptName, async(text,name)=>{ draft.script=text; draft.scriptName=name; render(); }, ()=>{ draft.script=''; draft.scriptName=''; render(); });
+  bindAS();
+  bindKeymsg('a', ()=>draft.summary, v=>{draft.summary=v;}, ()=>draft.prod? draft.ptitle : p.title, (text,name)=>{ draft.script=text; draft.scriptName=name; const el=$('#aScriptSlot'); if(el){ el.innerHTML=scriptSlot('a', text, name, true); bindAS(); } });
+  bindModuleChips('a', draft.modules, ()=>render());
+  $('#aClear').onclick=()=>{ if(draft.thumbPrev) URL.revokeObjectURL(draft.thumbPrev); Object.assign(draft,DRAFT0()); render(); };
+  const setDT=f=>{ if(!f||!/^image\//.test(f.type)){ toast('이미지 파일을 올려 주세요'); return; } if(draft.thumbPrev) URL.revokeObjectURL(draft.thumbPrev); draft.thumbFile=f; draft.thumbPrev=URL.createObjectURL(f); render(); };
+  $('#aThumb')?.addEventListener('change',e=>setDT(e.target.files[0]));
+  $('#aThumbRm')?.addEventListener('click',()=>{ if(draft.thumbPrev) URL.revokeObjectURL(draft.thumbPrev); draft.thumbFile=null; draft.thumbPrev=''; render(); });
+  { const d=$('#aThumbDrop'); if(d){ d.addEventListener('dragover',e=>{e.preventDefault(); d.classList.add('over');}); d.addEventListener('dragleave',()=>d.classList.remove('over')); d.addEventListener('drop',e=>{ e.preventDefault(); d.classList.remove('over'); setDT(e.dataTransfer.files[0]); }); } }
+  const saveDT=async id=>{ const f=draft.thumbFile; if(!f) return; try{ await putThumb({id, thumb:''}, f); }catch(e){ toast('영상은 저장됐지만 '+thumbErr(e)); } };
+  $('#addForm').onsubmit=async e=>{ e.preventDefault();
+    if (draft.prod){
+      const title=draft.ptitle.trim(); if(!title) return;
+      const tcode='T-'+Date.now().toString(36);
+      const doc = {code:tcode, kind:draft.pkind, title, instructor:draft.instructor, link:'', duration:fmtDur(draft.duration)||draft.duration, date:draft.date,
+        summary:draft.summary.trim(), detail:'', category:'', review:false, maker:'', note:'', related:[], client:draft.pkind==='C'?draft.client:'', course:draft.pkind==='C'?draft.course:'', status:'제작 중', script:draft.script, scriptName:draft.scriptName, sheetModule: draft.modules.map(modName).join(', '), createdAt:new Date().toISOString()};
+      try{
+        await S.db.doc('videos/'+tcode).set(doc);
+        for (const m of draft.modules) await addLink(m, tcode, title);
+        toast(`'${title}' 제작 중으로 등록됨`);
+        await saveDT(tcode);
+        if(draft.thumbPrev) URL.revokeObjectURL(draft.thumbPrev);
+        Object.assign(draft,DRAFT0()); openSheet(tcode);
+      }catch(err){ writeFail(err); }
+      return;
+    }
+    const pp=parseVimeoTitle(draft.vtitle); if(!pp.code||!linkId(draft.link)) return;
+    const same=S.videos.filter(v=>v.code===pp.code).length;
+    const id = same? `${pp.code}~${same+1}` : pp.code;
+    const doc = {code:pp.code, kind:pp.code[0], title:pp.title, instructor:draft.instructor, link:'https://player.vimeo.com/video/'+linkId(draft.link),
+      duration:fmtDur(draft.duration)||draft.duration, date:draft.date, 
+      summary:draft.summary.trim(), detail:'', category:'', review:false, maker:'', note:'', related:[], client:draft.client, course:draft.course, status:'사용', script:draft.script, scriptName:draft.scriptName, sheetModule: draft.modules.map(modName).join(', '), createdAt:new Date().toISOString()};
+    try{
+      await S.db.doc('videos/'+id).set(doc);
+      for (const m of draft.modules) await addLink(m, pp.code, pp.title);
+      await logHistory(id, ['등록']);
+      toast(`${pp.code} 등록됨`);
+      runSync(id, doc, null, null, `${pp.code} 등록됨`);
+      await saveDT(id);
+      if(draft.thumbPrev) URL.revokeObjectURL(draft.thumbPrev);
+      Object.assign(draft,DRAFT0());
+      openSheet(id);
+    }catch(err){ writeFail(err); }
+  };
+}
+async function addLink(moduleId, code, label){
+  const max = Math.max(0, ...S.links.filter(l=>l.module===moduleId).map(l=>l.pos));
+  await S.db.collection('mlinks').add({module:moduleId, pos:max+1, code, label, desc:'', raw:''});
+}
+
+function keymsgBlock(p, val){
+  return `<div class="box" style="display:flex;flex-direction:column;gap:8px">
+    <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><span class="label">내용 요약</span>
+      <span class="actions"><label class="btn" style="cursor:pointer">스크립트 올리기<input type="file" id="${p}File" accept=".docx,.txt,.md,.srt" hidden></label><button type="button" id="${p}Paste">내용 붙여넣기</button></span></div>
+    <div id="${p}PasteBox" hidden><textarea id="${p}Script" rows="5" placeholder="스크립트 내용을 붙여넣으세요"></textarea><div class="actions" style="margin-top:6px"><button type="button" id="${p}Gen" class="primary">AI 초안 만들기</button></div></div>
+    <textarea id="${p}Km" rows="9" placeholder="첫 줄에 핵심 키워드, 아래에 • 질문과 - 글머리표(순서가 있으면 1) 2) 번호)로 핵심 내용">${esc(val)}</textarea>
+    <span class="hint" id="${p}KmStatus"></span></div>`;
+}
+async function docxText(file){
+  const zip = await JSZip.loadAsync(file); const xml = await zip.file('word/document.xml').async('string');
+  const t = xml.replace(/<w:tab\/>/g,'\t').replace(/<\/w:p>/g,'\n').replace(/<[^>]+>/g,'');
+  const ta=document.createElement('textarea'); ta.innerHTML=t; return ta.value;
+}
+function bindKeymsg(p, get, set, titleFn, onScript){
+  const km=$('#'+p+'Km'), st=$('#'+p+'KmStatus');
+  km.addEventListener('input',()=>set(km.value));
+  $('#'+p+'Paste').onclick=()=>{ const b=$('#'+p+'PasteBox'); b.hidden=!b.hidden; };
+  const gen = async text => {
+    if (!S.sample){ st.textContent='AI 초안 기능을 이 화면에서 쓸 수 없습니다. 직접 입력해 주세요.'; return; }
+    text = text.trim().slice(0, 30000); if (text.length<40){ st.textContent='스크립트 내용이 너무 짧습니다.'; return; }
+    st.textContent='AI가 내용 요약 초안을 쓰는 중입니다…';
+    try{
+      const prompt = `너는 HSG(휴먼솔루션그룹)의 리더십 교육 영상 편집자다. 아래 강의 스크립트를 읽고 영상의 내용 요약을 한국어로 써라.
+형식: 첫 줄에 핵심 키워드를 쉼표로 2~4개(예: "건설적 갈등, 적시&직접 대립"), 빈 줄, 그 아래 핵심 내용을 3~4묶음으로 짧게 쓴다. 각 묶음은 "• 질문 문장" 한 줄과, 그 아래 답을 줄마다 "  - 내용" 형식의 글머리표로 쓴다. 단계·순서·개수가 있는 내용(예: 3가지 방법)은 "  1) 내용", "  2) 내용"처럼 번호로 쓴다. "〮", "→" 기호는 쓰지 않는다. 묶음 사이는 빈 줄로 구분한다.
+분량: 묶음마다 답은 1~3줄, 한 줄은 40자 안팎의 짧은 요점으로 쓴다. 사례, 인용, 수치, 부연 설명은 빼고 핵심 개념과 방법만 남긴다. 키워드 줄을 빼고 전체 350~500자 안팎으로 맞춘다. 필요하면 마지막에 핵심 메시지 한 줄을 덧붙인다.
+예시:
+관찰, 피드백
+
+• 좋은 리더가 되려면 무엇이 필요한가?
+  - 조직이 요구하는 성과를 달성한다
+  - 구성원이 성장하도록 돕는다
+
+• 구성원을 성장시키는 방법은?
+  1) 관찰하기
+  2) 역량(KSA) 키워주기
+규칙: 스크립트에 있는 개념과 표현만 쓰고, 설명이나 머리말 없이 본문만 출력하라.
+영상 제목: ${titleFn()||'(미정)'}
+스크립트:
+${text}`;
+      const r = await S.sample(prompt, {modelTier:'default'});
+      const out = (r.text||'').trim();
+      km.value = out; set(out);
+      st.textContent='AI 초안입니다. 읽어 보고 고친 뒤 저장하세요.';
+    }catch(err){ st.textContent = err?.code==='not_granted' ? 'AI 사용이 허용되지 않았습니다. 직접 입력해 주세요.' : err?.code==='rate_limited' ? '요청이 많습니다. 잠시 후 다시 시도해 주세요.' : '초안을 만들지 못했습니다. 다시 시도하거나 직접 입력해 주세요.'; }
+  };
+  $('#'+p+'File').onchange=async e=>{ const f=e.target.files[0]; if(!f) return;
+    try{ const text = /\.docx$/i.test(f.name)? await docxText(f) : await f.text(); if(onScript) onScript(text.replace(/\r/g,'').trim(), f.name); await gen(text); }
+    catch{ st.textContent='파일을 읽지 못했습니다. .docx 또는 .txt 파일인지 확인해 주세요.'; } e.target.value=''; };
+  $('#'+p+'Gen').onclick=()=>gen($('#'+p+'Script').value);
+}
+function moduleChips(p, list){
+  const mods=S.modules.slice().sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+  return `<div class="chipin" style="margin-top:4px">${list.map(id=>`<span class="chip">${esc(modName(id))}<button type="button" data-rm="${esc(id)}" aria-label="${esc(modName(id))} 빼기">×</button></span>`).join('')}
+    <select id="${p}Mod" style="width:auto;min-width:160px">${opt('','+ 모듈 추가','')}${mods.filter(m=>!list.includes(m.id)).map(m=>opt(m.id,m.name,'')).join('')}</select></div>`;
+}
+function bindModuleChips(p, list, after){
+  $('#'+p+'Mod').onchange=e=>{ if(e.target.value){ list.push(e.target.value); after(); } };
+  document.querySelectorAll(`#${p==='a'?'addForm':'editForm'} [data-rm]`).forEach(b=>b.onclick=()=>{ list.splice(list.indexOf(b.dataset.rm),1); after(); });
+}
+
+/* admin */
+function bars(rows){
+  const max=Math.max(1,...rows.map(r=>r.n));
+  return `<div class="bars">${rows.map(r=>`<div class="bar-row"><span class="bar-l" title="${esc(r.label)}">${esc(r.label)}</span><span class="bar-t"><span class="bar-f${r.n?'':' zero'}" style="width:${(r.n/max*100).toFixed(1)}%"></span></span><span class="bar-n">${r.n}</span><span class="bar-s">${esc(r.sub||'')}</span></div>`).join('')}</div>`;
+}
+function hm(sec){ const h=Math.floor(sec/3600), m=Math.round(sec%3600/60); return h? `${h}시간 ${m}분` : `${m}분`; }
+function statInstructors(){
+  const act=S.videos.filter(v=>v.status==='사용');
+  const rows=S.instructors.map(i=>{ const vs=act.filter(v=>v.instructor===i.id); return {label:i.name?`${i.id} · ${i.name}`:i.id, n:vs.length, sub:hm(vs.reduce((s,v)=>s+Math.max(0,secs(v.duration)),0))}; }).sort((a,b)=>b.n-a.n||a.label.localeCompare(b.label));
+  const none=act.filter(v=>!v.instructor).length;
+  return `<div class="card"><h2>강사별 영상 수</h2><p class="hint" style="margin:0">'사용' 상태 영상 ${act.length}편 기준, 오른쪽은 총 길이입니다.</p>${bars(rows)}${none?`<p class="hint" style="margin:0">강사가 비어 있는 영상 ${none}편은 제외했습니다.</p>`:''}</div>`;
+}
+function statModules(){
+  const active=new Set(S.videos.filter(v=>v.status==='사용').map(v=>v.code));
+  const prod=new Set(S.videos.filter(v=>v.status==='제작 중').map(v=>v.code));
+  const rows=S.modules.map(m=>{ const ls=S.links.filter(l=>l.module===m.id); const todo=ls.filter(l=>!l.code||prod.has(l.code)).length; return {label:m.name, n:ls.filter(l=>active.has(l.code)).length, sub:todo?`미제작 ${todo}`:''}; }).sort((a,b)=>b.n-a.n||a.label.localeCompare(b.label,'ko'));
+  const empty=rows.filter(r=>!r.n).length;
+  return `<div class="card"><h2>모듈별 영상 수</h2><p class="hint" style="margin:0">V.4 강의 ${rows.length}개에 연결된 '사용' 상태 영상 수입니다.${empty?` 영상이 없는 강의는 ${empty}개입니다.`:''}</p>${bars(S.modAll? rows : rows.slice(0,8))}${rows.length>8?`<button type="button" id="modMore" class="ghost" style="align-self:center" aria-expanded="${!!S.modAll}">${S.modAll?'접기 ▴':`더보기 (${rows.length-8}개 더) ▾`}</button>`:''}</div>`;
+}
+function viewAdmin(){
+  const act=S.videos.filter(v=>v.status==='사용');
+  const kinds=['P','H','C'].map(k=>({k, n:act.filter(v=>v.kind===k).length, all:S.videos.filter(v=>v.kind===k).length}));
+  const activeCodes=new Set(act.map(v=>v.code));
+  const emptyMods=S.modules.filter(m=>!S.links.some(l=>l.module===m.id&&activeCodes.has(l.code))).length;
+  const c=ctx(); const nCheck=S.videos.filter(v=>reasonsFor(v,c).length).length;
+  $('#app').innerHTML = `<h1>관리</h1><p class="sub">자동 등록 설정, 데이터 현황, 강사 목록을 관리합니다.</p>
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div class="card"><div class="vimeo-head"><h2>비메오 자동 등록</h2><span class="pill warn">API 미연결</span></div>
+      <div class="vimeo-grid">
+        <dl class="meta"><dt>일정</dt><dd>매주 월 07:00, 금 19:00 (한국 시간)</dd><dt>강사</dt><dd>지금은 등록 화면에서 선택 · 연결 후 비메오 태그에서 자동</dd></dl>
+        <div style="display:flex;flex-direction:column;gap:8px;min-width:0"><label style="display:flex;flex-direction:column;gap:4px"><span class="label">API 토큰</span><input type="password" placeholder="토큰 발급 후 연동 단계에서 설정" disabled></label>
+          <div class="actions"><button disabled title="API 토큰이 연결되면 사용할 수 있습니다">지금 반영</button><span class="hint">토큰은 이 페이지에 저장하지 않습니다.</span></div></div>
+      </div></div>
+    <section aria-label="데이터 현황"><h2 style="margin-bottom:8px">데이터 현황</h2>
+      <div class="tiles">
+        <div class="tile"><span class="label">전체 영상</span><b>${act.length}</b><span class="hint">사용 중 · 전체 ${S.videos.length}편</span></div>
+        ${kinds.map(x=>`<div class="tile"><span class="label"><span class="code ${x.k}">${x.k}</span> ${esc(KIND[x.k])}</span><b>${x.n}</b><span class="hint">${(()=>{const d=S.videos.filter(v=>v.kind===x.k&&v.status!=='사용'&&v.status!=='제작 중').length;return d?`삭제·대체 ${d}편 제외`:'모두 사용 중';})()}</span></div>`).join('')}
+        <div class="tile"><span class="label">제작 중</span><b>${S.videos.filter(v=>v.status==='제작 중').length}</b><span class="hint">편집 전 · 링크 없이 등록</span></div>
+        <div class="tile"><span class="label">모듈 (V.4)</span><b>${S.modules.length}</b><span class="hint">영상 없는 강의 ${emptyMods}개</span></div>
+        <a class="tile" href="#check"><span class="label">확인 필요</span><b style="color:var(--warn)">${nCheck}</b><span class="hint">목록 열기 →</span></a>
+      </div></section>
+    <div class="grid2">${statInstructors()}${statModules()}</div>
+    <div class="card"><h2>강사</h2><p class="hint" style="margin:0">비메오 태그와 같은 이니셜을 씁니다. 이름은 화면 표시용입니다.</p>
+      <div class="inst-grid">${S.instructors.map(i=>`<label class="inst-cell"><span class="mono">${esc(i.id)}</span><input data-iname="${esc(i.id)}" value="${esc(i.name)}" placeholder="이름" aria-label="${esc(i.id)} 이름" ${S.canWrite?'':'disabled'}></label>`).join('')}</div>
+      ${S.canWrite?`<form class="actions" id="instForm"><input id="newInst" placeholder="새 이니셜 (예: KJH)" maxlength="6" style="flex:1;min-width:0;text-transform:uppercase"><button type="submit">추가</button></form>`:''}</div>
+  </div>`;
+  $('#modMore')?.addEventListener('click',()=>{ S.modAll=!S.modAll; render(); });
+  document.querySelectorAll('[data-iname]').forEach(el=>el.addEventListener('change',async()=>{ try{ await S.db.doc('instructors/'+el.dataset.iname).update({name:el.value.trim()}); toast('저장됨'); }catch(err){writeFail(err);} }));
+  $('#instForm')?.addEventListener('submit',async e=>{ e.preventDefault(); const v=$('#newInst').value.trim().toUpperCase();
+    if(!/^[A-Z]{2,6}$/.test(v)){ toast('이니셜은 영문 2~6자로 입력해 주세요'); return; }
+    if(S.instructors.some(i=>i.id===v)){ toast('이미 있는 이니셜입니다'); return; }
+    try{ await S.db.doc('instructors/'+v).set({name:'',active:true}); toast(v+' 추가됨'); }catch(err){writeFail(err);} });
+}
+
+/* ---------- sheet ---------- */
+/* ---------- thumbnails ---------- */
+const BULK={busy:false, log:'', showAll:false, onlyMissing:true};
+function thumbTargets(){ const seen=new Set(); return S.videos.filter(v=>v.kind==='H'&&v.status==='사용'&&!seen.has(v.code)&&seen.add(v.code)).sort((a,b)=>a.code.localeCompare(b.code,'en',{numeric:true})); }
+function thumbAdmin(){
+  const list=thumbTargets(), have=list.filter(v=>v.thumb).length, miss=list.filter(v=>!v.thumb);
+  const show=BULK.showAll? list : miss;
+  return `<div class="card" id="thumbCard"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap"><h2>썸네일</h2><span class="hint">사용 중 H영상 <b>${have}</b> / ${list.length}편에 썸네일이 있습니다</span></div>
+    ${S.canWrite&&S.assets?`<label class="bulk-drop" id="bulkDrop"><input type="file" id="bulkFile" accept="image/*,.zip" multiple hidden><b>썸네일 한꺼번에 올리기</b><span>파일 이름이 영상 번호인 이미지(예: H025.jpg) 여러 개, 또는 그 이미지들을 묶은 .zip 파일을 끌어다 놓으세요</span></label>
+    <label style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" id="bulkOnly" style="width:auto" ${BULK.onlyMissing?'checked':''}> 이미 썸네일이 있는 영상은 건너뛰기</label>`:'<p class="hint" style="margin:0">썸네일을 올리려면 편집 권한이 있는 계정으로 열어 주세요.</p>'}
+    ${BULK.log?`<div class="bulk-log" id="bulkLog">${esc(BULK.log)}</div>`:''}
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="label">${BULK.showAll?'전체':'썸네일 없는 영상'} ${show.length}편</span><button type="button" class="ghost" id="thAll">${BULK.showAll?'없는 영상만 보기':'전체 보기'}</button></div>
+    <div class="thumb-grid">${show.map(v=>`<button type="button" data-id="${esc(v.id)}" title="${esc(v.code)} ${esc(v.title)}">${v.thumb?`<img src="${thumbUrl(v)}" alt="" loading="lazy">`:'<span class="ph">썸네일 없음</span>'}<span><b>${esc(v.code)}</b> ${esc(v.title)}</span></button>`).join('') || '<p class="hint">모든 영상에 썸네일이 있습니다.</p>'}</div></div>`;
+}
+async function filesFromInput(fileList){
+  const out=[];
+  for (const f of fileList){
+    if (/\.zip$/i.test(f.name)){
+      const zip=await JSZip.loadAsync(f);
+      for (const [name,e] of Object.entries(zip.files)){ if(e.dir || !/\.(jpe?g|png|webp)$/i.test(name) || /(^|\/)(__MACOSX|\.)/.test(name)) continue;
+        const b=await e.async('blob'); out.push(new File([b], name.split('/').pop(), {type: /png$/i.test(name)?'image/png':/webp$/i.test(name)?'image/webp':'image/jpeg'})); }
+    } else if (/^image\//.test(f.type)) out.push(f);
+  }
+  return out;
+}
+async function bulkThumbs(fileList){
+  if (BULK.busy) return; BULK.busy=true; BULK.log='파일을 읽는 중…'; render();
+  const logEl=()=>$('#bulkLog'); const say=s=>{ BULK.log=s; const el=logEl(); if(el){ el.textContent=s; el.scrollTop=el.scrollHeight; } };
+  try{
+    const files=await filesFromInput(fileList);
+    const by={}; thumbTargets().forEach(v=>by[v.code]=v);
+    let ok=0, skip=0, bad=[], lines=[];
+    for (let i=0;i<files.length;i++){
+      const f=files[i], m=f.name.match(/^([PHC])\s*0*(\d{1,3})(-\d+)?/i);
+      const code=m? m[1].toUpperCase()+String(+m[2]).padStart(3,'0')+(m[3]||'') : '';
+      const v=by[code];
+      if (!v){ bad.push(`${f.name}: 사용 중인 영상 번호를 찾지 못함`); continue; }
+      if (BULK.onlyMissing && v.thumb){ skip++; continue; }
+      say(`${i+1}/${files.length} ${code} 올리는 중…\n`+lines.slice(-6).join('\n'));
+      try{ await putThumb(v,f); v.thumb='pending'; ok++; lines.push(`${code} 완료`); }
+      catch(e){ bad.push(`${f.name}: ${thumbErr(e)}`); if(e?.code==='quota_or_state') break; }
+    }
+    BULK.log=`끝났습니다 · 저장 ${ok}편${skip?` · 이미 있어 건너뜀 ${skip}편`:''}${bad.length?` · 실패 ${bad.length}건\n`+bad.join('\n'):''}`;
+  }catch(e){ BULK.log='파일을 읽지 못했습니다. 이미지 파일이나 .zip 파일인지 확인해 주세요.'; }
+  finally{ BULK.busy=false; render(); }
+}
+function bindThumbAdmin(){
+  const d=$('#bulkDrop');
+  $('#bulkFile')?.addEventListener('change',e=>bulkThumbs([...e.target.files]));
+  $('#bulkOnly')?.addEventListener('change',e=>{ BULK.onlyMissing=e.target.checked; });
+  $('#thAll')?.addEventListener('click',()=>{ BULK.showAll=!BULK.showAll; render(); });
+  if (d){ d.addEventListener('dragover',e=>{e.preventDefault(); d.classList.add('over');}); d.addEventListener('dragleave',()=>d.classList.remove('over'));
+    d.addEventListener('drop',e=>{ e.preventDefault(); d.classList.remove('over'); bulkThumbs([...e.dataTransfer.files]); }); }
+  bindRows($('#thumbCard'));
+}
+const thumbUrl = v => v && v.thumb ? '/_blob/'+v.thumb : '';
+async function shrinkImage(file, maxW=960){
+  const url=URL.createObjectURL(file);
+  try{
+    const img=await new Promise((ok,no)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=no; i.src=url; });
+    const s=Math.min(1, maxW/img.naturalWidth), w=Math.round(img.naturalWidth*s), h=Math.round(img.naturalHeight*s);
+    const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h);
+    return await new Promise(ok=>c.toBlob(ok,'image/jpeg',0.86));
+  } finally { URL.revokeObjectURL(url); }
+}
+function thumbErr(e){
+  const c=e?.code;
+  if (c==='quota_or_state') return '사이트 이미지 저장 공간이 가득 찼습니다';
+  if (c==='too_large') return '이미지가 너무 큽니다';
+  if (c==='unsupported_type') return '이미지 파일(JPG·PNG)만 올릴 수 있습니다';
+  if (c==='not_granted') return '이미지 저장 권한이 허용되지 않았습니다';
+  if (c==='rate_limited'||c==='store_unavailable') return '잠시 후 다시 시도해 주세요';
+  return '썸네일을 저장하지 못했습니다';
+}
+async function putThumb(v, file){
+  if (!S.assets) throw {code:'not_granted'};
+  const blob=await shrinkImage(file);
+  const up=await S.assets.upload(blob,{type:'image/jpeg'});
+  const old=v.thumb;
+  await S.db.doc('videos/'+v.id).update({thumb:up.id});
+  if (old && old!==up.id) S.assets.delete(old).catch(()=>{});
+  return up.id;
+}
+async function dropThumb(v){
+  const old=v.thumb; await S.db.doc('videos/'+v.id).update({thumb:''});
+  if (old && S.assets) S.assets.delete(old).catch(()=>{});
+}
+const DOC_ICON='<svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M14 3v5h5M9 13h6M9 17h6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+const IMG_ICON='<svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="10" r="1.6" fill="currentColor"/><path d="M4 17l5-5 4 4 3-3 4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+async function resummarize(v){
+  const box=$('#re-d'), btn=$('[data-sre="d"]'); if(!box||!S.sample) return;
+  box.hidden=false; btn.disabled=true; box.innerHTML='<p class="hint" style="margin:0">AI가 스크립트를 읽고 내용 요약을 다시 쓰는 중입니다… 20~40초 걸립니다</p>';
+  const prompt=`너는 HSG(휴먼솔루션그룹)의 리더십 교육 영상 편집자다. 아래 강의 스크립트 전체를 읽고 세 가지를 한국어로 써라.
+1) summary(내용 요약): 첫 줄에 핵심 키워드 2~4개를 쉼표로 구분해 쓰고, 빈 줄 다음 그 아래 핵심 내용을 3~4묶음으로 짧게 쓴다. 각 묶음은 "• 질문 문장" 한 줄과, 그 아래 답을 줄마다 "  - 내용" 형식의 글머리표로 쓴다. 단계·순서·개수가 있는 내용(예: 3가지 방법)은 "  1) 내용", "  2) 내용"처럼 번호로 쓴다. "〮", "→" 기호는 쓰지 않는다. 묶음 사이는 빈 줄로 구분한다.
+분량: 묶음마다 답은 1~3줄, 한 줄은 40자 안팎의 짧은 요점으로 쓴다. 사례, 인용, 수치, 부연 설명은 빼고 핵심 개념과 방법만 남긴다. 키워드 줄을 빼고 전체 350~500자 안팎으로 맞춘다. 필요하면 마지막에 핵심 메시지 한 줄을 덧붙인다.
+예시:
+관찰, 피드백
+
+• 좋은 리더가 되려면 무엇이 필요한가?
+  - 조직이 요구하는 성과를 달성한다
+  - 구성원이 성장하도록 돕는다
+
+• 구성원을 성장시키는 방법은?
+  1) 관찰하기
+  2) 역량(KSA) 키워주기
+   스크립트 전체를 읽고 가장 중요한 내용만 골라 압축한다.
+2) target(추천 대상): 15~35자 명사구, "리더"/"팀장"/"구성원"/"직장인" 같은 사람 명사로 끝남
+3) pitch(카달로그 요약): 두 문장 90~150자, 합니다체. 첫 문장은 필요나 문제, 둘째 문장은 "본 영상에서는"으로 시작해 배우는 내용을 쓰고 "학습합니다." 또는 "소개합니다."로 끝냄
+규칙: 스크립트에 있는 내용만 쓴다. 지어내지 않는다.
+JSON 하나로만 답하라: {"summary":"","target":"","pitch":""}
+영상 제목: ${v.title}
+스크립트:
+${(v.script||'').slice(0,40000)}`;
+  try{
+    const r=await S.sample.json(prompt,{modelTier:'default', cache:false});
+    const nv={summary:String(r?.summary||'').trim(), target:String(r?.target||'').trim(), pitch:String(r?.pitch||'').trim()};
+    if(!nv.summary) throw {code:'empty_completion'};
+    box.innerHTML=`<div class="re-h"><b>새 내용 요약 (AI 초안)</b><span class="hint">고친 뒤 저장할 수 있어요. 저장하면 지금 요약은 '이전 요약'으로 보관됩니다.</span></div>
+      <label><span class="label">내용 요약</span><textarea id="reSum" rows="12">${esc(nv.summary)}</textarea></label>
+      <label><span class="label">추천 대상</span><input id="reTarget" value="${esc(nv.target)}"></label>
+      <label><span class="label">카달로그 요약</span><textarea id="rePitch" rows="3">${esc(nv.pitch)}</textarea></label>
+      <div class="actions"><button type="button" class="primary" id="reSave">저장</button><button type="button" id="reCancel">취소</button></div>`;
+    $('#reCancel').onclick=()=>{ box.hidden=true; box.innerHTML=''; btn.disabled=false; };
+    $('#reSave').onclick=async e=>{ e.currentTarget.disabled=true;
+      try{ await S.db.doc('videos/'+v.id).update({summary:$('#reSum').value.trim(), target:$('#reTarget').value.trim(), pitch:$('#rePitch').value.trim(),
+          summaryPrev:v.summary||'', targetPrev:v.target||'', pitchPrev:v.pitch||''});
+        toast('내용 요약을 새로 저장했습니다'); }catch(err){ writeFail(err); e.currentTarget.disabled=false; } };
+  }catch(e){
+    box.innerHTML=`<p class="hint" style="margin:0;color:var(--bad)">${e?.code==='not_granted'?'AI 사용이 허용되지 않았습니다.':e?.code==='rate_limited'?'요청이 많습니다. 잠시 후 다시 시도해 주세요.':'요약을 만들지 못했습니다. 다시 시도해 주세요.'}</p>`;
+    btn.disabled=false;
+  }
+}
+async function readScript(f){ if(!/\.(docx|txt|md|srt)$/i.test(f.name)) throw new Error('type'); return (/\.docx$/i.test(f.name)? await docxText(f) : await f.text()).replace(/\r/g,'').trim(); }
+function scriptSlot(id, s, name, can){
+  if (s) return `<div class="script-box"><span class="script-ic">${DOC_ICON}</span><span class="script-meta"><b>${esc(name||'스크립트')}</b><span>${s.length.toLocaleString()}자</span></span>
+    <span class="script-act">${id==='d'&&can&&S.sample?`<button type="button" class="primary" data-sre="${id}">내용 요약 다시 쓰기</button>`:''}<button type="button" data-sview="${id}">보기</button>${S.downloads?`<button type="button" data-sdown="${id}">내려받기</button>`:''}${can?`<label class="btn">바꾸기<input type="file" data-sfile="${id}" accept=".docx,.txt,.md,.srt" hidden></label><button type="button" data-srm="${id}">빼기</button>`:''}</span>
+    <pre class="script-text" id="sv-${id}" hidden>${esc(s)}</pre><div class="re-box" id="re-${id}" hidden></div></div>`;
+  return can? `<label class="thumb-empty small script-empty" data-sdrop="${id}"><input type="file" data-sfile="${id}" accept=".docx,.txt,.md,.srt" hidden>${DOC_ICON}<b>스크립트 올리기</b><span>.docx·.txt 파일 · 클릭하거나 끌어다 놓으세요</span></label>` : '';
+}
+function bindScriptSlot(id, s, name, onFile, onRemove){
+  const root=document;
+  root.querySelector(`[data-sview="${id}"]`)?.addEventListener('click',e=>{ const pre=$('#sv-'+id); pre.hidden=!pre.hidden; e.currentTarget.textContent=pre.hidden?'보기':'접기'; });
+  root.querySelector(`[data-sdown="${id}"]`)?.addEventListener('click',async()=>{ try{ await S.downloads.save({filename:(name||'스크립트').replace(/\.[^.]+$/,'')+'.txt', data:s}); }catch(e){ if(e?.code!=='declined') toast('내려받지 못했습니다'); } });
+  root.querySelector(`[data-srm="${id}"]`)?.addEventListener('click',onRemove);
+  const go=async f=>{ if(!f) return; try{ const text=await readScript(f); if(text.length<20){ toast('스크립트 내용이 너무 짧습니다'); return; } await onFile(text, f.name); }catch(e){ toast(e?.message==='type'?'.docx 또는 .txt 파일을 올려 주세요':'파일을 읽지 못했습니다'); } };
+  root.querySelector(`[data-sfile="${id}"]`)?.addEventListener('change',e=>{ go(e.target.files[0]); e.target.value=''; });
+  const d=root.querySelector(`[data-sdrop="${id}"]`); if(d){ d.addEventListener('dragover',e=>{e.preventDefault(); d.classList.add('over');}); d.addEventListener('dragleave',()=>d.classList.remove('over')); d.addEventListener('drop',e=>{ e.preventDefault(); d.classList.remove('over'); go(e.dataTransfer.files[0]); }); }
+}
+function thumbBlock(v){
+  const can=S.canWrite && S.assets;
+  if (v.thumb) return `<div class="thumb-box"><img src="${thumbUrl(v)}" alt="${esc(v.title)} 썸네일">${can?`<div class="thumb-act"><label class="btn">바꾸기<input type="file" id="thFile" accept="image/*" hidden></label><button type="button" id="thDel">빼기</button></div>`:''}</div>`;
+  return can? `<label class="thumb-empty" id="thDrop"><input type="file" id="thFile" accept="image/*" hidden>${IMG_ICON}<b>썸네일 올리기</b><span>강사 얼굴이 보이는 장면 1장 · 클릭하거나 이미지를 끌어다 놓으세요</span></label>` : '';
+}
+function bindThumb(v){
+  const go=async f=>{ if(!f||!/^image\//.test(f.type)){ toast('이미지 파일을 올려 주세요'); return; }
+    toast('썸네일 저장 중…'); try{ await putThumb(v,f); toast('썸네일을 저장했습니다'); }catch(e){ toast(thumbErr(e)); } };
+  $('#thFile')?.addEventListener('change',e=>go(e.target.files[0]));
+  $('#thDel')?.addEventListener('click',async()=>{ try{ await dropThumb(v); toast('썸네일을 뺐습니다'); }catch(e){ writeFail(e); } });
+  const d=$('#thDrop'); if(d){ d.addEventListener('dragover',e=>{e.preventDefault(); d.classList.add('over');}); d.addEventListener('dragleave',()=>d.classList.remove('over'));
+    d.addEventListener('drop',e=>{ e.preventDefault(); d.classList.remove('over'); go(e.dataTransfer.files[0]); }); }
+}
+function closeSheet(){ S.open=null; S.editing=false; $('#sheetRoot').innerHTML=''; }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && S.open) closeSheet(); });
+function openSheet(id){ S.open=id; S.editing=false; renderSheet(); }
+function renderSheet(){
+  if (!S.open) return;
+  const v = S.videos.find(x=>x.id===S.open); if(!v){ closeSheet(); return; }
+  const mods = videoModules(v);
+  const r = reasonsFor(v, ctx());
+  const others = S.videos.filter(x=>x.code===v.code && x.id!==v.id);
+  const rel = (v.related||[]).map(code=>S.videos.find(x=>x.code===code && x.status==='사용') || S.videos.find(x=>x.code===code) || {code});
+  const body = S.editing ? editHtml(v) : `
+    ${r.length?`<div class="pills">${r.map(x=>`<span class="pill warn">${esc(x)}</span>`).join('')}</div>`:''}
+    ${S.canWrite&&v.sheetFail&&v.kind==='H'&&!isTemp(v.code)?`<div class="notice" style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:0"><span>구글 시트 반영 실패 · 고객사용 시트에 이 영상의 최근 저장 내용이 들어가지 않았습니다.</span><button id="toSheet" class="primary">다시 반영</button></div>`:''}
+    ${thumbBlock(v)}
+    ${scriptSlot('d', v.script, v.scriptName, S.canWrite)}
+    <div class="summary"><h2>내용 요약${v.summaryPrev&&S.canWrite?` <button type="button" class="ghost undo" id="undoSum" title="스크립트로 다시 쓰기 전 요약으로 되돌립니다">이전 요약으로 되돌리기</button>`:''}</h2>${v.summary?`<p class="pre">${esc(v.summary)}</p>`:'<p>아직 없습니다</p>'}</div>
+    <div class="actions">${v.link?`<a class="btn primary" style="background:var(--accent);color:var(--accent-ink);border-color:var(--accent)" href="${esc(v.link)}" target="_blank" rel="noopener">비메오에서 재생 ↗</a><button id="cp">링크 복사</button>`:(v.status==='제작 중'?'<span class="pill warn">제작 중 · 편집이 끝나면 수정에서 링크와 일련번호를 넣어 주세요</span>':'<span class="pill bad">비메오 링크 없음</span>')}
+      ${S.canWrite?'<button id="edit">수정</button>':''}${S.canWrite?'<span id="delWrap" style="margin-left:auto"><button id="del" class="ghost" style="color:var(--bad)">완전 삭제</button></span>':''}</div>
+    <dl class="meta">
+      <dt>구분</dt><dd>${esc(v.kind)} · ${esc(KIND[v.kind]||'')}</dd>
+      <dt>강사</dt><dd class="mono">${esc(v.instructor||'—')}${(()=>{const i=S.instructors.find(i=>i.id===v.instructor);return i&&i.name?' · '+esc(i.name):'';})()}</dd>
+      <dt>길이</dt><dd class="mono">${esc(fmtDur(v.duration)||'—')}</dd>
+      <dt>${v.kind==='C'?'납품일자':'제작일자'}</dt><dd class="mono">${esc(v.date||'—')}</dd>
+      <dt>상태</dt><dd>${v.status==='사용'?'사용':`<span class="pill ${v.status==='삭제'?'bad':'warn'}">${esc(v.status)}</span>`}</dd>
+      ${v.remark?`<dt>비고</dt><dd class="pre" style="margin:0">${esc(v.remark)}</dd>`:''}
+      ${v.kind==='C'?`<dt>고객사</dt><dd>${esc(v.client||'—')}</dd><dt>과정명</dt><dd>${esc(v.course||'—')}</dd>`:''}
+      <dt>모듈</dt><dd>${mods.length? mods.map(esc).join(', ') : '—'}</dd>
+      ${v.target?`<dt>추천 대상</dt><dd>${esc(v.target)}</dd>`:''}
+      ${v.pitch?`<dt>카달로그 요약</dt><dd>${esc(v.pitch)}</dd>`:''}
+      ${v.category?`<dt>분류</dt><dd>${esc(v.category)}</dd>`:''}
+      ${rel.length?`<dt>연결 영상</dt><dd class="pills">${rel.map(x=>x.id?`<button class="code ${esc(x.kind)}" style="border:0" data-jump="${esc(x.id)}">${esc(x.code)}</button>`:`<span class="code">${esc(x.code)}</span>`).join('')}</dd>`:''}
+      ${others.length?`<dt>같은 번호</dt><dd class="pills">${others.map(x=>`<button class="pill" data-jump="${esc(x.id)}">${esc(x.date||'')} · ${esc(x.status)}</button>`).join('')}</dd>`:''}
+      <dt>리뷰노트</dt><dd>${v.review?'있음':'—'}</dd>
+      <dt>Tool</dt><dd>${v.tool?'O':'X'}</dd>
+      ${v.maker?`<dt>제작</dt><dd>${esc(v.maker)}</dd>`:''}
+    </dl>
+    ${v.detail?`<div><span class="label">영상 내용</span><p class="pre">${esc(v.detail)}</p></div>`:''}
+`;
+  $('#sheetRoot').innerHTML = `<div class="scrim" id="scrim"></div><aside class="sheet" role="dialog" aria-modal="true" aria-label="${esc(isTemp(v.code)?'제작 중':v.code)} ${esc(v.title)}">
+    <div class="sheet-h"><div class="grow">${codeBadge(v.code, v.kind)}<h1 style="margin-top:6px">${esc(v.title)}</h1></div><button class="ghost" id="x" aria-label="닫기">✕</button></div>
+    <div class="sheet-b">${body}</div></aside>`;
+  $('#scrim').onclick=closeSheet; $('#x').onclick=closeSheet;
+  document.querySelectorAll('[data-jump]').forEach(b=>b.onclick=()=>openSheet(b.dataset.jump));
+  if (S.editing) bindEdit(v);
+  else {
+    $('#edit')?.addEventListener('click',()=>{S.editing=true;renderSheet();});
+    bindThumb(v);
+    bindScriptSlot('d', v.script, v.scriptName,
+      async (text,name)=>{ try{ await S.db.doc('videos/'+v.id).update({script:text, scriptName:name}); toast('스크립트를 저장했습니다'); }catch(e){ writeFail(e); } },
+      async ()=>{ try{ await S.db.doc('videos/'+v.id).update({script:'', scriptName:''}); toast('스크립트를 뺐습니다'); }catch(e){ writeFail(e); } });
+    $('[data-sre="d"]')?.addEventListener('click',()=>resummarize(v));
+    $('#undoSum')?.addEventListener('click',async()=>{ try{ await S.db.doc('videos/'+v.id).update({summary:v.summaryPrev, target:v.targetPrev||v.target||'', pitch:v.pitchPrev||v.pitch||'', summaryPrev:'', targetPrev:'', pitchPrev:''}); toast('이전 내용 요약으로 되돌렸습니다'); }catch(e){ writeFail(e); } });
+    $('#toSheet')?.addEventListener('click',async e=>{ const b=e.currentTarget; b.disabled=true; b.textContent='반영 중…'; await runSync(v.id, v, null, null, ''); if(b.isConnected){ b.disabled=false; b.textContent='다시 반영'; } });
+    $('#del')?.addEventListener('click',()=>{
+      const w=$('#delWrap');
+      w.innerHTML=`<span class="hint" style="color:var(--bad)">DB${v.kind==='H'&&!isTemp(v.code)?'·고객사용 시트':''}에서 완전히 지웁니다. 되돌릴 수 없어요.</span> <button id="delYes" style="background:var(--bad);color:#fff;border-color:var(--bad)">삭제</button> <button id="delNo">취소</button>`;
+      $('#delNo').onclick=()=>renderSheet();
+      $('#delYes').onclick=async e=>{ e.currentTarget.disabled=true; await deleteVideo(v); };
+    });
+    $('#cp')?.addEventListener('click',async()=>{ try{ await navigator.clipboard.writeText(v.link); toast('링크를 복사했습니다'); }catch{ toast(v.link); } });
+  }
+}
+async function loadHistory(id){
+  const el=$('#hist'); if(!el) return;
+  try{
+    const snap = await S.db.collection('history').where('vid','==',id).get();
+    const rows = snap.docs.map(d=>d.data()).sort((a,b)=>(b.at||'').localeCompare(a.at||'')).slice(0,8);
+    if(!rows.length){ el.textContent='기존 시트에서 옮긴 뒤 바뀐 내용이 없습니다.'; return; }
+    const ps = S.user ? await S.user.profiles([...new Set(rows.map(r=>r.by).filter(Boolean))]) : {};
+    if (S.open!==id || !$('#hist')) return;
+    $('#hist').innerHTML = rows.map(r=>`<div>${esc((r.at||'').slice(0,16).replace('T',' '))} · <span data-name></span> · ${esc((r.changes||[]).join(', '))}</div>`).join('');
+    $('#hist').querySelectorAll('[data-name]').forEach((s,i)=>s.textContent=(ps[rows[i].by]?.name)||'담당자');
+  }catch{ el.textContent='이력을 불러오지 못했습니다.'; }
+}
+async function logHistory(){}
+
+const FIELDS = {script:'스크립트',scriptName:'스크립트',target:'추천 대상',pitch:'카달로그 요약',sheetModule:'모듈',tool:'Tool',title:'제목',instructor:'강사',link:'링크',duration:'길이',date:'제작일자',summary:'내용 요약',detail:'영상 내용',status:'상태',related:'연결 영상',client:'고객사',course:'과정명',remark:'비고',review:'리뷰노트'};
+let editMods=[];
+function editHtml(v){
+  editMods = S.links.filter(l=>l.code===v.code).map(l=>l.module).filter((x,i,a)=>a.indexOf(x)===i);
+  return `<form id="editForm" class="form" autocomplete="off">
+    ${isTemp(v.code)?`<div class="full notice info" style="margin:0">제작 중인 영상입니다. 편집이 끝나면 일련번호와 비메오 링크를 넣고 상태를 '사용'으로 바꿔 저장하세요.${v.kind==='H'?' 저장하면 고객사용 시트에 자동으로 추가됩니다.':''}</div>
+    <label class="full"><span class="label">일련번호 (편집이 끝나면 입력)</span><input id="eCode" placeholder="예: H210" style="text-transform:uppercase"></label>`:''}
+    <label class="full"><span class="label">제목</span><input id="eTitle" value="${esc(v.title)}"></label>
+    <label><span class="label">강사</span><select id="eInst">${opt('','선택',v.instructor)}${S.instructors.map(i=>opt(i.id,i.name?`${i.id} · ${i.name}`:i.id,v.instructor)).join('')}${v.instructor&&!instSet().has(v.instructor)?opt(v.instructor,v.instructor+' (목록에 없음)',v.instructor):''}</select></label>
+    <label><span class="label">상태</span><select id="eStatus">${STATUSES.map(s=>opt(s,s,v.status)).join('')}</select></label>
+    <label class="full"><span class="label">비메오 링크</span><input id="eLink" value="${esc(v.link)}"></label>
+    <label><span class="label">길이</span><input id="eDur" value="${esc(v.duration)}"></label>
+    <label><span class="label">${v.kind==='C'?'납품일자':'제작일자'}</span><input id="eDate" value="${esc(v.date)}" placeholder="2026-10-19"></label>
+    ${v.kind==='C'?`<label><span class="label">고객사</span><input id="eClient" value="${esc(v.client)}"></label><label><span class="label">과정명</span><input id="eCourse" value="${esc(v.course)}"></label>`:''}
+    <div class="full">${keymsgBlock('e', v.summary)}</div>
+    <label class="full"><span class="label">추천 대상 <span class="hint">카달로그에 들어갑니다</span></span><input id="eTarget" value="${esc(v.target||'')}" placeholder="예: 평가 면담의 납득성을 높이고자 하는 리더"></label>
+    <label class="full"><span class="label">카달로그 요약 <span class="hint">2문장 · 카달로그 영상 상세에 들어갑니다</span></span><textarea id="ePitch" rows="3" placeholder="필요나 문제 한 문장 + '본 영상에서는 …' 한 문장">${esc(v.pitch||'')}</textarea></label>
+    <label class="full"><span class="label">연결 영상 (번호, 쉼표로 구분)</span><input id="eRel" value="${esc((v.related||[]).join(', '))}" placeholder="P027, H064"></label>
+    <div class="full"><span class="label">모듈 <span class="hint">고객사용 시트의 모듈 칸에도 이 이름이 들어갑니다</span></span><div id="eMods">${moduleChips('e', editMods)}</div></div>
+    <label class="full"><span class="label">비고</span><textarea id="eNote" rows="2" placeholder="삭제·미사용·리뉴얼 등 사유 (사용 중인 영상은 비워 두세요)">${esc(v.remark||'')}</textarea></label>
+    <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="eReview" style="width:auto" ${v.review?'checked':''}> 리뷰노트 있음</label>
+    <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="eTool" style="width:auto" ${v.tool?'checked':''}> Tool 있음</label>
+    <div class="full actions"><button class="primary" type="submit">저장</button><button type="button" id="eCancel">취소</button></div>
+  </form>`;
+}
+function bindEdit(v){
+  let km = v.summary;
+  let pendScript=null;
+  bindKeymsg('e', ()=>km, x=>km=x, ()=>$('#eTitle').value, (text,name)=>{ pendScript={text,name}; });
+  const rebind = () => { $('#eMods').innerHTML = moduleChips('e', editMods); bindModuleChips('e', editMods, rebind); };
+  bindModuleChips('e', editMods, rebind);
+  $('#eCancel').onclick=()=>{S.editing=false;renderSheet();};
+  $('#editForm').onsubmit=async e=>{ e.preventDefault();
+    const nv = {title:$('#eTitle').value.trim(), instructor:$('#eInst').value, status:$('#eStatus').value, link:$('#eLink').value.trim(),
+      duration:fmtDur($('#eDur').value.trim())||$('#eDur').value.trim(), date:$('#eDate').value.trim(),
+      summary:$('#eKm').value, target:$('#eTarget').value.trim(), pitch:$('#ePitch').value.trim(), detail:v.detail||'', remark:$('#eNote').value.trim(), review:$('#eReview').checked, tool:$('#eTool').checked, sheetModule:editMods.length? editMods.map(modName).join(', ') : (v.sheetModule||''),
+      related:$('#eRel').value.split(/[,\s]+/).map(s=>s.trim().toUpperCase()).filter(Boolean)};
+    if (pendScript){ nv.script=pendScript.text; nv.scriptName=pendScript.name; }
+    if (v.kind==='C'){ nv.client=$('#eClient').value.trim(); nv.course=$('#eCourse').value.trim(); }
+    if (nv.link && linkId(nv.link)) nv.link='https://player.vimeo.com/video/'+linkId(nv.link);
+    if (v.status==='제작 중' && nv.status==='사용' && !linkId(nv.link)){ toast("'사용'으로 바꾸려면 비메오 링크를 넣어 주세요"); return; }
+    if (isTemp(v.code)){
+      const raw=($('#eCode').value||'').trim(); const pc=parseVimeoTitle(raw+'_x').code;
+      if (raw && !pc){ toast('일련번호 형식을 확인해 주세요 (예: H210)'); return; }
+      if (!pc && nv.status!=='제작 중'){ toast("상태를 바꾸려면 일련번호를 먼저 넣어 주세요"); return; }
+      if (pc) return finalizeTemp(v, nv, pc);
+    }
+    const changed = Object.keys(nv).filter(k=>JSON.stringify(nv[k])!==JSON.stringify(v[k] ?? (typeof nv[k]==='boolean'?false:Array.isArray(nv[k])?[]:'')));
+    const before = S.links.filter(l=>l.code===v.code);
+    const add = editMods.filter(m=>!before.some(l=>l.module===m)), rm = before.filter(l=>!editMods.includes(l.module));
+    try{
+      if (changed.length) await S.db.doc('videos/'+v.id).update(nv);
+      for (const m of add) await addLink(m, v.code, nv.title);
+      for (const l of rm) await S.db.doc('mlinks/'+l.id).delete();
+      const log = changed.map(k=>FIELDS[k]||k); if(add.length||rm.length) log.push('모듈');
+      if (log.length){ await logHistory(v.id, log); toast('저장했습니다'); } else toast('바뀐 내용이 없습니다');
+      S.editing=false; renderSheet();
+      const SHEET_KEYS=['title','link','sheetModule','duration','status','remark'];
+      if (v.kind==='H' && changed.some(k=>SHEET_KEYS.includes(k))) runSync(v.id, {...v, ...nv}, v.link, v.title, '저장했습니다');
+    }catch(err){ writeFail(err); }
+  };
+}
+async function deleteVideo(v){
+  const keepLinks = S.videos.some(x=>x.code===v.code && x.id!==v.id);
+  const links = keepLinks? [] : S.links.filter(l=>l.code===v.code);
+  try{
+    await S.db.doc('videos/'+v.id).delete();
+    for (const l of links) await S.db.doc('mlinks/'+l.id).delete();
+    if (v.thumb && S.assets) S.assets.delete(v.thumb).catch(()=>{});
+  }catch(err){ writeFail(err); renderSheet(); return; }
+  const label = isTemp(v.code)? `'${v.title}'` : v.code;
+  closeSheet(); toast(`${label} 삭제했습니다`);
+  removeSheetRow(v).then(m=>m&&toast(`${label} 삭제 · ${m}`)).catch(e=>toast(`${label} 삭제 · ${sheetErr(e).replace('반영','줄 삭제')}`));
+}
+async function removeSheetRow(v){
+  if (v.kind!=='H' || isTemp(v.code)) return '';
+  const mcp = await getMcp(); if (!mcp) throw {code:'capability_disabled'};
+  const r = await mcp.callTool(SHEET.server,'get_values',{spreadsheetId:SHEET.id, range:`${SHEET.tab}!A1:C3000`},{cache:false});
+  const rows = (r.payload && r.payload.values) || [];
+  const idx = rows.findIndex((row,i)=> i>0 && (v.link ? row[2]===v.link : (!row[2] && row[0]===v.code && row[1]===v.title)));
+  if (idx<0) return '구글 시트에는 해당 줄이 없었습니다';
+  await mcp.callTool(SHEET.server,'update_spreadsheet',{spreadsheetId:SHEET.id, requests:[{deleteDimension:{range:{sheetId:SHEET.gid, dimension:'ROWS', startIndex:idx, endIndex:idx+1}}}]},{cache:false});
+  return `구글 시트 ${idx+1}행도 지웠습니다`;
+}
+async function finalizeTemp(v, nv, code){
+  const {id:_old, ...base} = v;
+  const same=S.videos.filter(x=>x.code===code).length;
+  const nid = same? `${code}~${same+1}` : code;
+  const doc = {...base, ...nv, code, kind:code[0]};
+  const before = S.links.filter(l=>l.code===v.code);
+  try{
+    await S.db.doc('videos/'+nid).set(doc);
+    for (const l of before){ if (editMods.includes(l.module)) await S.db.doc('mlinks/'+l.id).update({code, label:nv.title}); else await S.db.doc('mlinks/'+l.id).delete(); }
+    for (const m of editMods.filter(m=>!before.some(l=>l.module===m))) await addLink(m, code, nv.title);
+    await S.db.doc('videos/'+v.id).delete();
+    toast(`${code} 번호로 저장했습니다`);
+    S.open=nid; S.editing=false; renderSheet();
+    runSync(nid, doc, null, null, `${code} 저장`);
+  }catch(err){ writeFail(err); }
+}
+function writeFail(err){
+  if (err?.code==='invalid_argument'){ S.canWrite=false; render(); renderSheet(); toast('편집 권한이 없어 저장하지 못했습니다'); }
+  else toast('저장하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+}
+
+/* ---------- Google Sheet sync (고객사용 시트, H 영상) ---------- */
+const SHEET = {id:'1z7ltlknl_3K9qT8xP21Sq0TSO8S1e0yoCho7SNnANgM', tab:'H영상', gid:677840313, server:'Google Sheets'};
+let mcpP=null; const getMcp=()=> mcpP ||= claude.use('mcp');
+function sheetErr(e){
+  const c=e?.code;
+  if (c==='server_not_connected'||c==='needs_reauth') return '구글 시트 반영 실패: claude.ai 설정 > 커넥터에서 Google Sheets 연결을 확인해 주세요';
+  if (c==='not_in_manifest'||c==='approval_required'||c==='not_granted'||c==='consent_required') return '구글 시트 반영 실패: 이 페이지의 Google Sheets 사용이 허용되지 않았습니다';
+  if (c==='capability_disabled'||c==='capability_removed') return '구글 시트 반영 실패: 이 화면에서는 시트에 연결할 수 없습니다';
+  if (c==='tool_error') return '구글 시트 반영 실패: '+(e.message||'시트가 요청을 거절했습니다').slice(0,80);
+  return '구글 시트 반영 실패: 영상 상세의 "다시 반영"으로 다시 시도해 주세요';
+}
+async function runSync(id, v, prevLink, prevTitle, label){
+  const pre = label ? label+' · ' : '';
+  const cur = () => S.videos.find(x=>x.id===id);
+  try{
+    const m = await syncSheet(v, prevLink, prevTitle);
+    if (m) toast(pre+m); else if (!label) toast('시트에 반영할 내용이 없습니다');
+    if (cur()?.sheetFail) await S.db.doc('videos/'+id).update({sheetFail:''}).catch(()=>{});
+  }catch(e){
+    toast(pre+sheetErr(e));
+    await S.db.doc('videos/'+id).update({sheetFail:new Date().toISOString()}).catch(()=>{});
+  }
+}
+async function syncSheet(v, prevLink, prevTitle){
+  if (v.kind!=='H' || isTemp(v.code) || v.status==='제작 중') return '';
+  const mcp = await getMcp(); if (!mcp) throw {code:'capability_disabled'};
+  const r = await mcp.callTool(SHEET.server,'get_values',{spreadsheetId:SHEET.id, range:`${SHEET.tab}!A1:C3000`},{cache:false});
+  const rows = (r.payload && r.payload.values) || [];
+  const find = f => rows.findIndex((row,i)=> i>0 && f(row));
+  let idx = v.link ? find(row=>row[2]===v.link) : -1;
+  if (idx<0 && prevLink) idx = find(row=>row[2]===prevLink);
+  // 링크 없는 줄: 일련번호 + (지금 제목 또는 바뀌기 전 제목)으로 찾기
+  if (idx<0) idx = find(row=>!row[2] && row[0]===v.code && row[1]===v.title);
+  if (idx<0 && prevTitle) idx = find(row=>!row[2] && row[0]===v.code && row[1]===prevTitle);
+  const isNew = idx<0, rowNum = isNew ? rows.length+1 : idx+1, ri = rowNum-1;
+  const used = v.status==='사용';
+  const rng = (c0,c1)=>({sheetId:SHEET.gid, startRowIndex:ri, endRowIndex:ri+1, startColumnIndex:c0, endColumnIndex:c1});
+  const requests = [];
+  if (isNew) requests.push({copyPaste:{source:{sheetId:SHEET.gid,startRowIndex:1,endRowIndex:2,startColumnIndex:0,endColumnIndex:7}, destination:rng(0,7), pasteType:'PASTE_FORMAT'}}, {copyPaste:{source:{sheetId:SHEET.gid,startRowIndex:1,endRowIndex:2,startColumnIndex:5,endColumnIndex:6}, destination:rng(5,6), pasteType:'PASTE_DATA_VALIDATION'}});
+  requests.push(used
+    ? {repeatCell:{range:rng(0,7), cell:{userEnteredFormat:{}}, fields:'userEnteredFormat.backgroundColorStyle'}}
+    : {repeatCell:{range:rng(0,7), cell:{userEnteredFormat:{backgroundColorStyle:{rgbColor:{red:0.85,green:0.85,blue:0.85}}}}, fields:'userEnteredFormat.backgroundColorStyle'}});
+  requests.push({repeatCell:{range:rng(0,2), cell:{userEnteredFormat:{textFormat:{strikethrough:!used}}}, fields:'userEnteredFormat.textFormat.strikethrough'}});
+  await mcp.callTool(SHEET.server,'update_spreadsheet',{spreadsheetId:SHEET.id, requests},{cache:false});
+  await mcp.callTool(SHEET.server,'update_values',{spreadsheetId:SHEET.id, range:`${SHEET.tab}!A${rowNum}:G${rowNum}`,
+    values:[[v.code, v.title||'', v.link||'', v.sheetModule||'', fmtDur(v.duration)||v.duration||'', used?'O':'X', used?'':(v.remark||'')]]},{cache:false});
+  return isNew ? `구글 시트 ${rowNum}행에 추가했습니다` : `구글 시트 ${rowNum}행을 고쳤습니다`;
+}
+
+/* ---------- back to top ---------- */
+const toTop = $('#toTop');
+const syncTop = () => { toTop.hidden = window.scrollY < 300; };
+window.addEventListener('scroll', syncTop, {passive:true}); syncTop();
+toTop.onclick = () => {
+  const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.scrollTo({top:0, behavior: smooth ? 'smooth' : 'auto'});
+  $('#q')?.focus({preventScroll:true});
+};
+
+/* ---------- boot ---------- */
+setView((location.hash||'#search').slice(1)||'search');
+(async () => {
+  const db = await claude.use('db');
+  S.db = db;
+  if (!db){ $('#boot')?.remove(); render(); return; }
+  claude.use('user').then(async u=>{ S.user=u; if(!u) return; S.uid=await u.id(); const can=await u.can('data.write'); if(can===false){ S.canWrite=false; render(); }
+    const me=await u.me(); $('#who').textContent = me.name ? me.name + (can===false?' · 보기 전용':'') : (can===false?'보기 전용':''); });
+  claude.use('sample').then(s=>{ S.sample=s; });
+  claude.use('downloads').then(d=>{ S.downloads=d; }).catch(()=>{});
+  claude.use('assets').then(a=>{ S.assets=a; render(); if(S.open && !S.editing) renderSheet(); }).catch(()=>{});
+  const sub = (col, key, map) => db.collection(col).limit(1000).onSnapshot(snap=>{
+    S[key] = snap.docs.map(d=>map(d.id, d.data())); S.loaded[key[0]] = true; render(); if(S.open && !S.editing) renderSheet();
+  }, ()=>{ S.loaded[key[0]]=true; render(); });
+  sub('videos','videos',(id,d)=>({id, ...d}));
+  sub('modules','modules',(id,d)=>({id, ...d}));
+  sub('mlinks','links',(id,d)=>({id, ...d}));
+  sub('instructors','instructors',(id,d)=>({id, name:'', ...d}));
+})();
+})();
+</script>

@@ -1,0 +1,37 @@
+name: 매일 접속 · 주간 백업
+on:
+  schedule:
+    - cron: '17 0 * * *'   # 매일 09:17 (한국 시간)
+  workflow_dispatch:
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Supabase 접속 (무료 플랜 멈춤 방지)
+        run: |
+          curl -fsS -X POST https://kpxhljkpvicffkxcvkeh.supabase.co/functions/v1/api \
+            -H 'content-type: application/json' -d '{"action":"ping"}'
+      - name: 전체 데이터 백업 (월요일 또는 수동 실행)
+        run: |
+          if [ "$(date -u +%u)" != "1" ] && [ "${{ github.event_name }}" != "workflow_dispatch" ]; then echo "백업은 월요일에만 합니다"; exit 0; fi
+          python3 - <<'PY'
+          import json, urllib.request
+          KEY = 'sb_publishable_0pBJQyG8r6z_5MFC6X1CdA_Ym5t578m'
+          out = []
+          while True:
+              req = urllib.request.Request(
+                  f'https://kpxhljkpvicffkxcvkeh.supabase.co/rest/v1/docs?select=col,id,data,updated_at&order=col,id&offset={len(out)}&limit=1000',
+                  headers={'apikey': KEY, 'authorization': 'Bearer ' + KEY})
+              rows = json.load(urllib.request.urlopen(req))
+              out += rows
+              if len(rows) < 1000:
+                  break
+          json.dump(out, open('backup.json', 'w'), ensure_ascii=False)
+          print('백업 문서 수:', len(out))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('backup.json') != ''
+        with:
+          name: hsg-video-db-backup-${{ github.run_number }}
+          path: backup.json
+          retention-days: 90
