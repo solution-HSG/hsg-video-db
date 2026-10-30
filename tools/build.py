@@ -35,8 +35,6 @@ s = rep(s, "const thumbUrl = v => v && v.thumb ? '/_blob/'+v.thumb : '';",
         "const thumbUrl = v => v && v.thumb ? HSG.thumbUrl(v.thumb) : '';")
 s = rep(s, '<div class="cv-tile img"><img src="${thumbUrl(x.v)}" alt=""></div>',
         '<div class="cv-tile img"><img src="${thumbUrl(x.v)}" alt="" crossorigin="anonymous"></div>')
-s = rep(s, '${v.thumb?`<img src="${thumbUrl(v)}" alt="">`:`<span class="dt-code">',
-        '${v.thumb?`<img src="${thumbUrl(v)}" alt="" crossorigin="anonymous">`:`<span class="dt-code">')
 s = rep(s, "{scale:1.6, backgroundColor:'#ffffff', logging:false,",
         "{scale:1.6, backgroundColor:'#ffffff', logging:false, useCORS:true,")
 

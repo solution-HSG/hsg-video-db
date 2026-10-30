@@ -305,6 +305,15 @@ a.tile:hover{border-color:var(--accent)}
 .thumb-box{width:100%;flex:none;position:relative;border-radius:var(--r);overflow:hidden;background:var(--sunk);aspect-ratio:16/9}
 .thumb-box img{width:100%;height:100%;object-fit:cover;display:block}
 .thumb-box.small{max-width:360px}
+.thumb-pair{display:grid;gap:10px}
+.thumb-pair.two{grid-template-columns:1fr 1fr}
+.thumb-pair .thumb-empty{aspect-ratio:16/9;padding:10px}
+.thumb-pair .thumb-empty span{font-size:12px}
+.thumb-pair.add{max-width:620px}
+.thumb-no{position:absolute;left:8px;top:8px;z-index:1;background:rgba(0,0,0,.55);color:#fff;font-size:12px;font-weight:700;border-radius:4px;padding:1px 7px}
+label.btn.thumb-both,.form label.btn.thumb-both{display:inline-flex;flex-direction:row;align-items:center;gap:6px;margin-top:8px;cursor:pointer;font-size:13px;width:auto;max-width:max-content}
+.thumb-both .ic{width:16px;height:16px}
+@media (max-width:520px){.thumb-pair.two{grid-template-columns:1fr}}
 .thumb-act{position:absolute;right:8px;bottom:8px;display:flex;gap:6px}
 .thumb-act .btn,.thumb-act button{background:rgba(255,255,255,.92);color:#16212c;border-color:transparent;padding:4px 10px;font-size:13px;cursor:pointer}
 .thumb-empty{width:100%;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:1.5px dashed var(--line);border-radius:var(--r);padding:18px;text-align:center;cursor:pointer;color:var(--muted);background:var(--surface)}
@@ -321,6 +330,8 @@ a.tile:hover{border-color:var(--accent)}
 .thumb-grid span{font-size:12px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dt-vis.has-img{background:#ddd}
 .dt-vis img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.dt-vis.two img{width:calc(50% - 2px)}
+.dt-vis.two img+img{left:auto;right:0}
 .dt-vis .dt-comp{z-index:1}
 .dt-vis.has-img .dt-comp{background:rgba(0,0,0,.45)}
 .cv-tile.img{padding:0;background:#3d2468}
@@ -998,8 +1009,8 @@ function slidesHtml(edit){
       out.push(`<div class="sl sl-light sl-dt">
         <div class="dt-head"><h2>추천 ${i+1} <i>|</i> ${esc(p.name)}</h2>${legend}</div>
         <div class="dt-grid">${x.vids.slice(k*3,k*3+3).map(({v,comp})=>{ const col=compColor(comp), tg=vtags(v); return `<div class="card dt-card">
-          <div class="dt-vis${v.thumb?' has-img':''}" style="--c:${col}">${v.thumb?`<img src="${thumbUrl(v)}" alt="" crossorigin="anonymous">`:`<span class="dt-code">${esc(v.code)}</span>`}<span class="dt-comp">${esc(comp)}</span></div>
-          <div class="dt-meta">${v.thumb?`<span class="cb">${esc(v.code)}</span>`:''}<span class="md">${esc(videoModules(v)[0]||comp)}</span>${instKo(v)?`<span class="in">${esc(instKo(v))}</span>`:''}<b>${esc(fmtDur(v.duration)||'')}</b></div>
+          ${(()=>{ const ims=THUMB_FIELDS.map(f=>v[f]).filter(Boolean); return `<div class="dt-vis${ims.length?' has-img':''}${ims.length>1?' two':''}" style="--c:${col}">${ims.length?ims.map(t=>`<img src="${HSG.thumbUrl(t)}" alt="" crossorigin="anonymous">`).join(''):`<span class="dt-code">${esc(v.code)}</span>`}`; })()}<span class="dt-comp">${esc(comp)}</span></div>
+          <div class="dt-meta">${(v.thumb||v.thumb2)?`<span class="cb">${esc(v.code)}</span>`:''}<span class="md">${esc(videoModules(v)[0]||comp)}</span>${instKo(v)?`<span class="in">${esc(instKo(v))}</span>`:''}<b>${esc(fmtDur(v.duration)||'')}</b></div>
           <div class="dt-title">${esc(v.title)}</div>
           <div class="dt-target"><b>추천 대상</b><span${ed(edit,`vt.${v.code}.target`)}>${esc(vtext(v,'target'))}</span></div>
           ${tg.length?`<div class="tags">${tg.map(t=>`<span>#${esc(t)}</span>`).join('')}</div>`:''}
@@ -1184,7 +1195,7 @@ function viewCheck(c){
 }
 
 /* add */
-const DRAFT0 = () => ({script:'', scriptName:'', thumbFile:null, thumbPrev:'', link:'',vtitle:'',instructor:'',duration:'',date:'',keymsg:'',summary:'',modules:[],client:'',course:'',prod:false,ptitle:'',pkind:'H'});
+const DRAFT0 = () => ({script:'', scriptName:'', thumbFile:null, thumbPrev:'', thumbFile2:null, thumbPrev2:'', link:'',vtitle:'',instructor:'',duration:'',date:'',keymsg:'',summary:'',modules:[],client:'',course:'',prod:false,ptitle:'',pkind:'H'});
 const draft = DRAFT0();
 function parseVimeoTitle(t){
   const m = String(t||'').trim().match(/^([PHCphc])\s*0*(\d{1,3})((?:-\d+)?)\s*[_\s]\s*(.+)$/);
@@ -1223,9 +1234,11 @@ function viewAdd(){
       <div class="full">${keymsgBlock('a', draft.summary)}</div>
       <div class="full"><span class="label">모듈</span>${moduleChips('a', draft.modules)}</div>
       <div class="full"><span class="label">스크립트 <span class="hint">영상 스크립트 파일 · 위 내용 요약에서 올린 스크립트도 여기에 저장됩니다</span></span><div id="aScriptSlot">${scriptSlot('a', draft.script, draft.scriptName, true)}</div></div>
-      <div class="full"><span class="label">썸네일 <span class="hint">강사 얼굴이 보이는 장면 1장 · 카달로그에 들어갑니다 · 나중에 넣어도 됩니다</span></span>
-        ${draft.thumbPrev?`<div class="thumb-box small"><img src="${draft.thumbPrev}" alt="썸네일 미리보기"><div class="thumb-act"><label class="btn">바꾸기<input type="file" id="aThumb" accept="image/*" hidden></label><button type="button" id="aThumbRm">빼기</button></div></div>`
-          :`<label class="thumb-empty small" id="aThumbDrop"><input type="file" id="aThumb" accept="image/*" hidden>${IMG_ICON}<b>썸네일 올리기</b><span>클릭하거나 이미지를 끌어다 놓으세요</span></label>`}</div>
+      <div class="full"><span class="label">썸네일 <span class="hint">두 장까지 · 1은 강사 얼굴 장면 · 카달로그에 나란히 들어갑니다 · 나중에 넣어도 됩니다</span></span>
+        <div class="thumb-pair two add">${[['thumbPrev',''],['thumbPrev2','2']].map(([k,n],i)=> draft[k]
+          ? `<div class="thumb-box"><span class="thumb-no">${i+1}</span><img src="${draft[k]}" alt="썸네일 ${i+1} 미리보기"><div class="thumb-act"><label class="btn">바꾸기<input type="file" data-ath="${i}" accept="image/*" hidden></label><button type="button" data-athrm="${i}">빼기</button></div></div>`
+          : `<label class="thumb-empty small" data-athdrop="${i}"><input type="file" data-ath="${i}" accept="image/*" multiple hidden>${IMG_ICON}<b>썸네일 ${i+1} 올리기</b><span>클릭하거나 끌어다 놓으세요</span></label>`).join('')}</div>
+        <label class="btn thumb-both"><input type="file" id="aThBoth" accept="image/*" multiple hidden>${IMG_ICON}<span>썸네일 두 장 한꺼번에 올리기</span></label></div>
     </div>
     <div class="actions"><button class="primary" type="submit" ${canSave?'':'disabled'}>${draft.prod?'제작 중으로 저장':'저장'}</button><button type="button" class="ghost" id="aClear">비우기</button></div>
   </form>
@@ -1248,12 +1261,20 @@ function viewAdd(){
   bindAS();
   bindKeymsg('a', ()=>draft.summary, v=>{draft.summary=v;}, ()=>draft.prod? draft.ptitle : p.title, (text,name)=>{ draft.script=text; draft.scriptName=name; const el=$('#aScriptSlot'); if(el){ el.innerHTML=scriptSlot('a', text, name, true); bindAS(); } });
   bindModuleChips('a', draft.modules, ()=>render());
-  $('#aClear').onclick=()=>{ if(draft.thumbPrev) URL.revokeObjectURL(draft.thumbPrev); Object.assign(draft,DRAFT0()); render(); };
-  const setDT=f=>{ if(!f||!/^image\//.test(f.type)){ toast('이미지 파일을 올려 주세요'); return; } if(draft.thumbPrev) URL.revokeObjectURL(draft.thumbPrev); draft.thumbFile=f; draft.thumbPrev=URL.createObjectURL(f); render(); };
-  $('#aThumb')?.addEventListener('change',e=>setDT(e.target.files[0]));
-  $('#aThumbRm')?.addEventListener('click',()=>{ if(draft.thumbPrev) URL.revokeObjectURL(draft.thumbPrev); draft.thumbFile=null; draft.thumbPrev=''; render(); });
-  { const d=$('#aThumbDrop'); if(d){ d.addEventListener('dragover',e=>{e.preventDefault(); d.classList.add('over');}); d.addEventListener('dragleave',()=>d.classList.remove('over')); d.addEventListener('drop',e=>{ e.preventDefault(); d.classList.remove('over'); setDT(e.dataTransfer.files[0]); }); } }
-  const saveDT=async id=>{ const f=draft.thumbFile; if(!f) return; try{ await putThumb({id, thumb:''}, f); }catch(e){ toast('영상은 저장됐지만 '+thumbErr(e)); } };
+  $('#aClear').onclick=()=>{ [draft.thumbPrev,draft.thumbPrev2].forEach(u=>u&&URL.revokeObjectURL(u)); Object.assign(draft,DRAFT0()); render(); };
+  const DK=[['thumbFile','thumbPrev'],['thumbFile2','thumbPrev2']];
+  const clearDT=i=>{ const [f,pv]=DK[i]; if(draft[pv]) URL.revokeObjectURL(draft[pv]); draft[f]=null; draft[pv]=''; };
+  const putDT=(i,f)=>{ clearDT(i); draft[DK[i][0]]=f; draft[DK[i][1]]=URL.createObjectURL(f); };
+  const setDT=(files, idx)=>{ files=[...files].filter(f=>f&&/^image\//.test(f.type)).slice(0,2);
+    if(!files.length){ toast('이미지 파일을 올려 주세요'); return; }
+    if (files.length>1){ putDT(0,files[0]); putDT(1,files[1]); }
+    else putDT(idx!=null? idx : (!draft.thumbPrev?0:!draft.thumbPrev2?1:0), files[0]);
+    render(); };
+  document.querySelectorAll('[data-ath]').forEach(el=>el.addEventListener('change',e=>setDT(e.target.files, e.target.files.length>1?null:+el.dataset.ath)));
+  $('#aThBoth')?.addEventListener('change',e=>setDT(e.target.files, null));
+  document.querySelectorAll('[data-athrm]').forEach(el=>el.addEventListener('click',()=>{ clearDT(+el.dataset.athrm); render(); }));
+  document.querySelectorAll('[data-athdrop]').forEach(d=>{ d.addEventListener('dragover',e=>{e.preventDefault(); d.classList.add('over');}); d.addEventListener('dragleave',()=>d.classList.remove('over')); d.addEventListener('drop',e=>{ e.preventDefault(); d.classList.remove('over'); const fs=e.dataTransfer.files; setDT(fs, fs.length>1?null:+d.dataset.athdrop); }); });
+  const saveDT=async id=>{ const fs=[draft.thumbFile, draft.thumbFile2]; const v={id, thumb:'', thumb2:''}; try{ for (const [i,f] of fs.entries()) if (f) await putThumb(v, f, THUMB_FIELDS[i]); }catch(e){ toast('영상은 저장됐지만 '+thumbErr(e)); } };
   $('#addForm').onsubmit=async e=>{ e.preventDefault();
     if (draft.prod){
       const title=draft.ptitle.trim(); if(!title) return;
@@ -1482,19 +1503,28 @@ function thumbErr(e){
   if (c==='rate_limited'||c==='store_unavailable') return '잠시 후 다시 시도해 주세요';
   return '썸네일을 저장하지 못했습니다';
 }
-async function putThumb(v, file){
+async function putThumb(v, file, field='thumb'){
   if (!S.assets) throw {code:'not_granted'};
   const blob=await shrinkImage(file);
   const up=await S.assets.upload(blob,{type:'image/jpeg'});
-  const old=v.thumb;
-  await S.db.doc('videos/'+v.id).update({thumb:up.id});
+  const old=v[field];
+  await S.db.doc('videos/'+v.id).update({[field]:up.id});
   if (old && old!==up.id) S.assets.delete(old).catch(()=>{});
+  v[field]=up.id;
   return up.id;
 }
-async function dropThumb(v){
-  const old=v.thumb; await S.db.doc('videos/'+v.id).update({thumb:''});
+async function dropThumb(v, field='thumb'){
+  const old=v[field]; await S.db.doc('videos/'+v.id).update({[field]:''});
   if (old && S.assets) S.assets.delete(old).catch(()=>{});
 }
+// 여러 장을 한꺼번에 받으면 1→2 순서로, 한 장이면 누른 칸(없으면 첫 빈 칸)에 넣음
+function thumbPlan(v, files, field){
+  files=[...files].filter(f=>f && /^image\//.test(f.type)).slice(0,2);
+  if (files.length>=2) return [['thumb',files[0]],['thumb2',files[1]]];
+  if (!files.length) return [];
+  return [[field || (!v.thumb?'thumb':!v.thumb2?'thumb2':'thumb'), files[0]]];
+}
+const THUMB_FIELDS=['thumb','thumb2'];
 const DOC_ICON='<svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M14 3v5h5M9 13h6M9 17h6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
 const IMG_ICON='<svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="10" r="1.6" fill="currentColor"/><path d="M4 17l5-5 4 4 3-3 4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>';
 async function resummarize(v){
@@ -1558,16 +1588,26 @@ function bindScriptSlot(id, s, name, onFile, onRemove){
 }
 function thumbBlock(v){
   const can=S.canWrite && S.assets;
-  if (v.thumb) return `<div class="thumb-box"><img src="${thumbUrl(v)}" alt="${esc(v.title)} 썸네일">${can?`<div class="thumb-act"><label class="btn">바꾸기<input type="file" id="thFile" accept="image/*" hidden></label><button type="button" id="thDel">빼기</button></div>`:''}</div>`;
-  return can? `<label class="thumb-empty" id="thDrop"><input type="file" id="thFile" accept="image/*" hidden>${IMG_ICON}<b>썸네일 올리기</b><span>강사 얼굴이 보이는 장면 1장 · 클릭하거나 이미지를 끌어다 놓으세요</span></label>` : '';
+  const have=THUMB_FIELDS.filter(f=>v[f]);
+  if (!can) return have.length? `<div class="thumb-pair${have.length>1?' two':''}">${have.map((f,i)=>`<div class="thumb-box"><img src="${HSG.thumbUrl(v[f])}" alt="${esc(v.title)} 썸네일 ${i+1}"></div>`).join('')}</div>` : '';
+  return `<div class="thumb-pair two">${THUMB_FIELDS.map((f,i)=> v[f]
+    ? `<div class="thumb-box"><span class="thumb-no">${i+1}</span><img src="${HSG.thumbUrl(v[f])}" alt="${esc(v.title)} 썸네일 ${i+1}"><div class="thumb-act"><label class="btn">바꾸기<input type="file" data-thf="${f}" accept="image/*" hidden></label><button type="button" data-thdel="${f}">빼기</button></div></div>`
+    : `<label class="thumb-empty" data-thdrop="${f}"><input type="file" data-thf="${f}" accept="image/*" multiple hidden>${IMG_ICON}<b>썸네일 ${i+1} 올리기</b><span>${i===0?'강사 얼굴이 보이는 장면':'두 번째 장면'} · 두 장을 한꺼번에 골라도 됩니다</span></label>`).join('')}</div>
+    <label class="btn thumb-both"><input type="file" id="thBoth" accept="image/*" multiple hidden>${IMG_ICON}<span>썸네일 두 장 한꺼번에 올리기</span></label>`;
 }
 function bindThumb(v){
-  const go=async f=>{ if(!f||!/^image\//.test(f.type)){ toast('이미지 파일을 올려 주세요'); return; }
-    toast('썸네일 저장 중…'); try{ await putThumb(v,f); toast('썸네일을 저장했습니다'); }catch(e){ toast(thumbErr(e)); } };
-  $('#thFile')?.addEventListener('change',e=>go(e.target.files[0]));
-  $('#thDel')?.addEventListener('click',async()=>{ try{ await dropThumb(v); toast('썸네일을 뺐습니다'); }catch(e){ writeFail(e); } });
-  const d=$('#thDrop'); if(d){ d.addEventListener('dragover',e=>{e.preventDefault(); d.classList.add('over');}); d.addEventListener('dragleave',()=>d.classList.remove('over'));
-    d.addEventListener('drop',e=>{ e.preventDefault(); d.classList.remove('over'); go(e.dataTransfer.files[0]); }); }
+  const go=async (files, field)=>{
+    const plan=thumbPlan(v, files, field);
+    if (!plan.length){ toast('이미지 파일을 올려 주세요'); return; }
+    toast('썸네일 저장 중…');
+    try{ for (const [f,file] of plan) await putThumb(v,file,f); toast(plan.length>1?'썸네일 두 장을 저장했습니다':'썸네일을 저장했습니다'); }
+    catch(e){ toast(thumbErr(e)); }
+  };
+  document.querySelectorAll('[data-thf]').forEach(el=>el.addEventListener('change',e=>{ go(e.target.files, e.target.files.length>1?null:el.dataset.thf); e.target.value=''; }));
+  $('#thBoth')?.addEventListener('change',e=>{ go(e.target.files, null); e.target.value=''; });
+  document.querySelectorAll('[data-thdel]').forEach(el=>el.addEventListener('click',async()=>{ try{ await dropThumb(v, el.dataset.thdel); toast('썸네일을 뺐습니다'); }catch(e){ writeFail(e); } }));
+  document.querySelectorAll('[data-thdrop]').forEach(d=>{ d.addEventListener('dragover',e=>{e.preventDefault(); d.classList.add('over');}); d.addEventListener('dragleave',()=>d.classList.remove('over'));
+    d.addEventListener('drop',e=>{ e.preventDefault(); d.classList.remove('over'); const fs=e.dataTransfer.files; go(fs, fs.length>1?null:d.dataset.thdrop); }); });
 }
 function closeSheet(){ S.open=null; S.editing=false; $('#sheetRoot').innerHTML=''; }
 document.addEventListener('keydown',e=>{ if(e.key==='Escape' && S.open) closeSheet(); });
@@ -1713,7 +1753,7 @@ async function deleteVideo(v){
   try{
     await S.db.doc('videos/'+v.id).delete();
     for (const l of links) await S.db.doc('mlinks/'+l.id).delete();
-    if (v.thumb && S.assets) S.assets.delete(v.thumb).catch(()=>{});
+    if (S.assets) THUMB_FIELDS.forEach(f=>{ if (v[f]) S.assets.delete(v[f]).catch(()=>{}); });
   }catch(err){ writeFail(err); renderSheet(); return; }
   const label = isTemp(v.code)? `'${v.title}'` : v.code;
   closeSheet(); toast(`${label} 삭제했습니다`);
