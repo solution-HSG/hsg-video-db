@@ -251,8 +251,6 @@ a.tile:hover{border-color:var(--accent)}
 .ls-h b{color:var(--pu);font-size:16px}
 .ls-row{display:grid;grid-template-columns:60px 1fr;gap:8px;padding:12px 22px;border-bottom:1px solid #eeebf2;font-size:15px;line-height:1.4;position:relative}
 .ls-row:last-child{border-bottom:0}
-.ls-row:has(.ls-in){grid-template-columns:60px 1fr auto}
-.ls-row .ls-in{font-style:normal;color:var(--sub);font-size:.86em;white-space:nowrap;align-self:center;padding-right:4px}
 .dt-meta .in{white-space:nowrap;color:var(--ink);font-weight:600}
 .ls-row b{font-family:Montserrat,sans-serif;font-weight:800;font-size:13px;color:var(--pu);padding-top:2px}
 .ls-grid.dense .ls-row{padding:6px 22px;font-size:14px}
@@ -674,11 +672,11 @@ function slideFoot(n, label){
 }
 const ROWH={};
 const instKo = v => { const i=S.instructors.find(i=>i.id===v?.instructor); return i&&i.name ? i.name : ''; };
-function measureRow(cols, code, title, inst=''){
-  const key=cols+'|'+title+'|'+inst; if (ROWH[key]) return ROWH[key];
+function measureRow(cols, code, title){
+  const key=cols+'|'+title; if (ROWH[key]) return ROWH[key];
   let m=document.getElementById('catMeasure');
   if (!m){ m=document.createElement('div'); m.id='catMeasure'; m.className='sl'; m.style.cssText='position:fixed;left:-30000px;top:0;height:auto'; document.body.appendChild(m); }
-  m.innerHTML=`<div class="ls-grid" style="grid-template-columns:repeat(${cols},minmax(0,1fr));margin:0;padding:0 56px"><div class="card ls-col"><div class="ls-row"><b>${esc(code)}</b><span>${esc(title)}</span>${inst?`<em class="ls-in">${esc(inst)}</em>`:''}</div></div></div>`;
+  m.innerHTML=`<div class="ls-grid" style="grid-template-columns:repeat(${cols},minmax(0,1fr));margin:0;padding:0 56px"><div class="card ls-col"><div class="ls-row"><b>${esc(code)}</b><span>${esc(title)}</span></div></div></div>`;
   const h=m.querySelector('.ls-row').getBoundingClientRect().height || 52;
   return ROWH[key]=Math.ceil(h)+1;
 }
