@@ -717,7 +717,7 @@ function slidesHtml(edit){
     const p=x.p, legend=`<div class="legend">${p.groups.map(g=>`<span><i style="background:${compColor(g.competency)}"></i>${esc(g.competency)}</span>`).join('')}</div>`;
     // list (paginate so columns never overflow)
     { const by=catByCode(), cols=Math.max(p.groups.length,2);
-      const rowH=c=>measureRow(cols, c, by[c].title, instKo(by[c]));
+      const rowH=c=>measureRow(cols, c, by[c].title);
       const chunks=p.groups.map(g=>{ const out=[[]]; let h=0; g.codes.forEach(c=>{ const r=rowH(c); if(h+r>404 && out[out.length-1].length){ out.push([]); h=0; } out[out.length-1].push(c); h+=r; }); return out; });
       const pages=Math.max(...chunks.map(c=>c.length));
       for (let k=0;k<pages;k++){
@@ -728,7 +728,7 @@ function slidesHtml(edit){
         <div class="big"><b>${x.n}</b><em>편</em><small>약</small><b>${x.min}</b><em>분</em></div></div>
       <div class="ls-grid" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">${gs.map(({g,codes})=>`<div class="card ls-col" style="--c:${compColor(g.competency)}">
         <div class="ls-h"><span><i></i>${esc(g.competency)}</span><b>${g.codes.length}편</b></div>
-        ${codes.map(c=>`<div class="ls-row"><b>${esc(c)}</b><span>${esc(by[c].title)}</span>${instKo(by[c])?`<em class="ls-in">${esc(instKo(by[c]))}</em>`:''}${edit?`<button type="button" class="rm" data-rmv="${i}|${esc(c)}" title="이 영상 빼기" aria-label="${esc(c)} 빼기">×</button>`:''}</div>`).join('')}
+        ${codes.map(c=>`<div class="ls-row"><b>${esc(c)}</b><span>${esc(by[c].title)}</span>${edit?`<button type="button" class="rm" data-rmv="${i}|${esc(c)}" title="이 영상 빼기" aria-label="${esc(c)} 빼기">×</button>`:''}</div>`).join('')}
       </div>`).join('')}</div>${slideFoot(n)}</div>`);
       }
     }
@@ -751,7 +751,7 @@ function slidesHtml(edit){
         <div class="dt-head"><h2>추천 ${i+1} <i>|</i> ${esc(p.name)}</h2>${legend}</div>
         <div class="dt-grid">${x.vids.slice(k*3,k*3+3).map(({v,comp})=>{ const col=compColor(comp), tg=vtags(v); return `<div class="card dt-card">
           <div class="dt-vis${v.thumb?' has-img':''}" style="--c:${col}">${v.thumb?`<img src="${thumbUrl(v)}" alt="">`:`<span class="dt-code">${esc(v.code)}</span>`}<span class="dt-comp">${esc(comp)}</span></div>
-          <div class="dt-meta">${v.thumb?`<span class="cb">${esc(v.code)}</span>`:''}<span class="md">${esc(videoModules(v)[0]||comp)}</span>${instKo(v)?`<span class="in">${esc(instKo(v))} 강사</span>`:''}<b>${esc(fmtDur(v.duration)||'')}</b></div>
+          <div class="dt-meta">${v.thumb?`<span class="cb">${esc(v.code)}</span>`:''}<span class="md">${esc(videoModules(v)[0]||comp)}</span>${instKo(v)?`<span class="in">${esc(instKo(v))}</span>`:''}<b>${esc(fmtDur(v.duration)||'')}</b></div>
           <div class="dt-title">${esc(v.title)}</div>
           <div class="dt-target"><b>추천 대상</b><span${ed(edit,`vt.${v.code}.target`)}>${esc(vtext(v,'target'))}</span></div>
           ${tg.length?`<div class="tags">${tg.map(t=>`<span>#${esc(t)}</span>`).join('')}</div>`:''}
