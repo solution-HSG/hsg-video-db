@@ -51,11 +51,12 @@ const PROMPT = (title: string, n: number) => `다음은 HSG 교육 영상 "${tit
 두 장을 골라라.
 1) face: 강사 얼굴이 정면(또는 거의 정면)으로 크고 선명하게 보이는 장면. 눈을 감았거나, 입이 크게 벌어졌거나, 흔들렸거나, 얼굴이 작거나 옆모습인 장면은 제외.
 2) caption: 사람이 전혀 나오지 않고, 영상 내용을 요약·정리한 화면 — 핵심 문장, 키워드, 요약 항목이 큰 글씨로 여러 개 보여 화면만 봐도 무슨 내용인지 알 수 있는 장면. 마무리 요약 화면이 있으면 우선. 그래프·도표는 설명 문장이나 키워드가 함께 크게 적혀 있을 때만 가능하고, 축 이름만 있는 빈 그래프는 제외. 화면에 사람(강사의 일부나 작은 모습 포함)이 조금이라도 보이면 제외. 영상 시작 타이틀 화면, 질문 한 줄만 있는 화면, 빈 화면, 글자가 작은 화면, 전환 중인 흐린 화면도 제외. 후보가 여럿이면 글자가 더 크고 내용이 더 많이 요약된 장면을 고른다.
+3) captionAlt: caption 조건(사람 없음)을 만족하는 장면이 없을 때 쓸 차선. 강사가 화면 한쪽에 작게(화면의 3분의 1 이하) 있고, 핵심 문장이나 키워드가 화면의 주인공으로 크게 보이는 장면. 영상 시작 타이틀, 질문 한 줄만 있는 화면, 글자가 작은 화면은 제외.
 알맞은 장면이 없으면 null.
-JSON 하나로만 답하라: {"face":번호 또는 null,"faceNote":"짧은 이유","caption":번호 또는 null,"captionNote":"짧은 이유"}`;
+JSON 하나로만 답하라: {"face":번호 또는 null,"faceNote":"짧은 이유","caption":번호 또는 null,"captionNote":"짧은 이유","captionAlt":번호 또는 null}`;
 
 const CAP_PROMPT = (title: string, n: number) => PROMPT(title, n)
-  .replace("두 장을 골라라.", "이번에는 caption 한 장만 골라라. face는 항상 null로 둔다.");
+  .replace("두 장을 골라라.", "이번에는 caption과 captionAlt만 골라라. face는 항상 null로 둔다.");
 
 async function claude(title: string, imgs: Uint8Array[], prompt = PROMPT) {
   const content: any[] = [];
@@ -123,18 +124,24 @@ Deno.serve(async (req) => {
     // 2) Claude 판정
     const ai = await claude(v.title || id, smalls);
     const pickIdx = (k: number | null) => (Number.isInteger(k) && k! >= 0 && k! < keep.length ? k! : null);
-    const fi = pickIdx(ai.face);
-    let ci = pickIdx(ai.caption), capNote = ai.captionNote, extraUsage = 0, rounds = 0;
-    while (ci === null && rounds < 2 && Date.now() - started < 80_000) {
+    const onlyCap = body.only === "caption";
+    const fi = onlyCap ? null : pickIdx(ai.face);
+    let ci = pickIdx(ai.caption), capNote = ai.captionNote, extraUsage = 0, rounds = 0, capAlt = false;
+    let alt = pickIdx(ai.captionAlt);
+    // 사람 없는 자막 화면을 못 찾으면 다른 시점 10곳에서 한 번 더 찾고, 그래도 없으면 차선(글자 중심 화면)을 씀
+    if (ci === null && Date.now() - started < 70_000) {
       rounds++;
-      const more = await frames(times(Number(duration) || 300, 8).map((t) => t + (rounds * 3.7)));
-      if (!more.length) break;
-      const r2 = await claude(v.title || id, more.map((x) => x.b), CAP_PROMPT);
-      extraUsage += (r2.usage?.input_tokens || 0) + (r2.usage?.output_tokens || 0) * 5;
-      const k = Number.isInteger(r2.caption) && r2.caption >= 0 && r2.caption < more.length ? r2.caption : null;
-      capNote = r2.captionNote || capNote;
-      if (k !== null) { smalls.push(more[k].b); keep.push(more[k].p); ci = keep.length - 1; }
+      const more = await frames(times(Number(duration) || 300, 8).map((t) => t + 3.7));
+      if (more.length) {
+        const r2 = await claude(v.title || id, more.map((x) => x.b), CAP_PROMPT);
+        extraUsage += (r2.usage?.input_tokens || 0) + (r2.usage?.output_tokens || 0) * 5;
+        const ok = (k: any) => Number.isInteger(k) && k >= 0 && k < more.length ? k : null;
+        const k = ok(r2.caption), ka = ok(r2.captionAlt);
+        if (k !== null) { smalls.push(more[k].b); keep.push(more[k].p); ci = keep.length - 1; capNote = r2.captionNote; }
+        else if (alt === null && ka !== null) { smalls.push(more[ka].b); keep.push(more[ka].p); alt = keep.length - 1; }
+      }
     }
+    if (ci === null && alt !== null) { ci = alt; capAlt = true; }
 
     // 3) 고른 장면 저장
     const save = async (i: number | null, name: string) => {
@@ -162,15 +169,16 @@ Deno.serve(async (req) => {
 
     let applied = false;
     if (body.apply) {
-      const old = [v.thumb, v.thumb2].filter((x: string) => x && /^t\//.test(x));
-      const patch = { thumb: facePath, thumb2: capPath, thumbAuto: { at: new Date().toISOString(), faceT: fi !== null ? keep[fi].t : null, capT: ci !== null ? keep[ci].t : null } };
+      const old = (onlyCap ? [v.thumb2] : [v.thumb, v.thumb2]).filter((x: string) => x && /^t\//.test(x));
+      const auto = { at: new Date().toISOString(), faceT: fi !== null ? keep[fi].t : (v.thumbAuto?.faceT ?? null), capT: ci !== null ? keep[ci].t : null, capAlt };
+      const patch = onlyCap ? { thumb2: capPath, thumbAuto: auto } : { thumb: facePath, thumb2: capPath, thumbAuto: auto };
       const { error } = await sb.rpc("docs_merge", { p_col: "videos", p_id: id, p_patch: patch });
       if (error) throw error;
       const drop = old.filter((p: string) => p !== facePath && p !== capPath);
       if (drop.length) await sb.storage.from("files").remove(drop);
       applied = true;
     }
-    return json({ id, ok: true, applied, duration, times: keep.map((p) => p.t), face: fi, caption: ci, faceNote: ai.faceNote, captionNote: capNote, rounds, extraUsage, facePath, capPath, candidates, usage: ai.usage });
+    return json({ id, ok: true, applied, duration, times: keep.map((p) => p.t), face: fi, caption: ci, faceNote: ai.faceNote, captionNote: capNote, capAlt, rounds, extraUsage, facePath, capPath, candidates, usage: ai.usage });
   } catch (e) {
     return json({ id, error: String((e as Error)?.message || e).slice(0, 300) });
   } finally {
