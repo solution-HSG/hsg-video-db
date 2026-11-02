@@ -59,11 +59,14 @@ async function claude(title: string, imgs: Uint8Array[]) {
     content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: b64(b) } });
   });
   content.push({ type: "text", text: PROMPT(title, imgs.length) });
-  const r = await fetch("https://api.anthropic.com/v1/messages", {
+  const send = (extra: Record<string, unknown>) => fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": Deno.env.get("ANTHROPIC_API_KEY") || "", "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: JSON.stringify({ model: MODEL, max_tokens: 300, messages: [{ role: "user", content }] }),
+    body: JSON.stringify({ model: MODEL, max_tokens: 1500, messages: [{ role: "user", content }], ...extra }),
   });
+  // 생각 단계 없이 바로 답하게 함 (지원하지 않으면 기본 설정으로 다시 요청)
+  let r = await send({ thinking: { type: "disabled" } });
+  if (r.status === 400) r = await send({});
   const j = await r.json();
   if (!r.ok) throw new Error("claude " + r.status + " " + JSON.stringify(j).slice(0, 200));
   const t = (j.content || []).map((c: any) => c.text || "").join("");
