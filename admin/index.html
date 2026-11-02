@@ -1009,7 +1009,7 @@ function slidesHtml(edit){
       out.push(`<div class="sl sl-light sl-dt">
         <div class="dt-head"><h2>추천 ${i+1} <i>|</i> ${esc(p.name)}</h2>${legend}</div>
         <div class="dt-grid">${x.vids.slice(k*3,k*3+3).map(({v,comp})=>{ const col=compColor(comp), tg=vtags(v); return `<div class="card dt-card">
-          ${(()=>{ const ims=THUMB_FIELDS.map(f=>v[f]).filter(Boolean); return `<div class="dt-vis${ims.length?' has-img':''}${ims.length>1?' two':''}" style="--c:${col}">${ims.length?ims.map(t=>`<img src="${HSG.thumbUrl(t)}" alt="" crossorigin="anonymous">`).join(''):`<span class="dt-code">${esc(v.code)}</span>`}`; })()}<span class="dt-comp">${esc(comp)}</span></div>
+          ${(()=>{ const ims=THUMB_FIELDS.map(f=>v[f]).filter(Boolean); return `<div class="dt-vis${ims.length?' has-img':''}${ims.length>1?' two':''}" style="--c:${col}">${ims.length?ims.map(t=>`<img src="${HSG.thumbUrl(t)}" alt="" crossorigin="anonymous">`).join(''):`<span class="dt-code">${esc(v.code)}</span>`}`; })()}</div>
           <div class="dt-meta">${(v.thumb||v.thumb2)?`<span class="cb">${esc(v.code)}</span>`:''}<span class="md">${esc(videoModules(v)[0]||comp)}</span>${instKo(v)?`<span class="in">${esc(instKo(v))}</span>`:''}<b>${esc(fmtDur(v.duration)||'')}</b></div>
           <div class="dt-title">${esc(v.title)}</div>
           <div class="dt-target"><b>추천 대상</b><span${ed(edit,`vt.${v.code}.target`)}>${esc(vtext(v,'target'))}</span></div>
