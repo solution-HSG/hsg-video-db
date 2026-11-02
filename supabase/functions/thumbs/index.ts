@@ -42,13 +42,15 @@ function times(duration: number, n: number) {
   const a = Math.max(8, duration * 0.08), z = duration - Math.max(6, duration * 0.06);
   const span = Math.max(1, z - a), out: number[] = [];
   for (let i = 0; i < n; i++) out.push(Math.round((a + span * (i + Math.random()) / n) * 10) / 10);
+  // 마무리 요약 화면이 나오는 뒷부분(80~97%)에서 2곳 더
+  for (let i = 0; i < 2; i++) out.push(Math.round(duration * (0.8 + 0.17 * (i + Math.random()) / 2) * 10) / 10);
   return out;
 }
 
 const PROMPT = (title: string, n: number) => `다음은 HSG 교육 영상 "${title}"에서 뽑은 장면 ${n}장이다 (0번부터 순서대로).
 두 장을 골라라.
 1) face: 강사 얼굴이 정면(또는 거의 정면)으로 크고 선명하게 보이는 장면. 눈을 감았거나, 입이 크게 벌어졌거나, 흔들렸거나, 얼굴이 작거나 옆모습인 장면은 제외.
-2) caption: 사람이 전혀 나오지 않고, 키워드나 핵심 문구가 그래픽으로 크게 디자인된 자막 화면. 화면에 사람(강사의 일부나 작은 모습 포함)이 조금이라도 보이면 제외. 영상 시작 타이틀 화면, 빈 화면, 글자가 작거나 거의 없는 화면, 전환 중인 흐린 화면도 제외.
+2) caption: 사람이 전혀 나오지 않고, 영상 내용을 요약·정리한 화면 — 핵심 문장, 키워드, 요약 항목이 큰 글씨로 여러 개 보여 화면만 봐도 무슨 내용인지 알 수 있는 장면. 마무리 요약 화면이 있으면 우선. 그래프·도표는 설명 문장이나 키워드가 함께 크게 적혀 있을 때만 가능하고, 축 이름만 있는 빈 그래프는 제외. 화면에 사람(강사의 일부나 작은 모습 포함)이 조금이라도 보이면 제외. 영상 시작 타이틀 화면, 질문 한 줄만 있는 화면, 빈 화면, 글자가 작은 화면, 전환 중인 흐린 화면도 제외. 후보가 여럿이면 글자가 더 크고 내용이 더 많이 요약된 장면을 고른다.
 알맞은 장면이 없으면 null.
 JSON 하나로만 답하라: {"face":번호 또는 null,"faceNote":"짧은 이유","caption":번호 또는 null,"captionNote":"짧은 이유"}`;
 
@@ -91,7 +93,7 @@ Deno.serve(async (req) => {
   const info = await vimeo(`/videos/${vid}?fields=duration,name`);
   if (!info.ok) return json({ id, error: "비메오 영상 정보 " + info.status, detail: (await info.text()).slice(0, 200) });
   const { duration } = await info.json();
-  const n = Math.min(Math.max(Number(body.n) || 10, 4), 12);
+  const n = Math.min(Math.max(Number(body.n) || 10, 4), 12);  // 여기에 뒷부분 2곳이 더해짐
   const ts = times(Number(duration) || 300, n);
 
   // 1) 장면 이미지 만들기 (비메오 대표 썸네일은 바꾸지 않음: active=false)
