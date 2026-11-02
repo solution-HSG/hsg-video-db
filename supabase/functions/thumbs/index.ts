@@ -54,13 +54,16 @@ const PROMPT = (title: string, n: number) => `다음은 HSG 교육 영상 "${tit
 알맞은 장면이 없으면 null.
 JSON 하나로만 답하라: {"face":번호 또는 null,"faceNote":"짧은 이유","caption":번호 또는 null,"captionNote":"짧은 이유"}`;
 
-async function claude(title: string, imgs: Uint8Array[]) {
+const CAP_PROMPT = (title: string, n: number) => PROMPT(title, n)
+  .replace("두 장을 골라라.", "이번에는 caption 한 장만 골라라. face는 항상 null로 둔다.");
+
+async function claude(title: string, imgs: Uint8Array[], prompt = PROMPT) {
   const content: any[] = [];
   imgs.forEach((b, i) => {
     content.push({ type: "text", text: `${i}번` });
     content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: b64(b) } });
   });
-  content.push({ type: "text", text: PROMPT(title, imgs.length) });
+  content.push({ type: "text", text: prompt(title, imgs.length) });
   const send = (extra: Record<string, unknown>) => fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": Deno.env.get("ANTHROPIC_API_KEY") || "", "anthropic-version": "2023-06-01", "content-type": "application/json" },
@@ -95,24 +98,43 @@ Deno.serve(async (req) => {
   const { duration } = await info.json();
   const n = Math.min(Math.max(Number(body.n) || 10, 4), 12);  // 여기에 뒷부분 2곳이 더해짐
   const ts = times(Number(duration) || 300, n);
+  const started = Date.now();
 
   // 1) 장면 이미지 만들기 (비메오 대표 썸네일은 바꾸지 않음: active=false)
   const pics: { t: number; uri: string; small: string; big: string }[] = [];
-  for (const t of ts) {
-    const r = await vimeo(`/videos/${vid}/pictures`, { method: "POST", body: JSON.stringify({ time: t, active: false }) });
-    if (!r.ok) { const e = await r.text(); if (!pics.length && r.status >= 400 && r.status < 500) return json({ id, error: "장면 만들기 실패 " + r.status, detail: e.slice(0, 300) }); continue; }
-    const p = await r.json();
-    pics.push({ t, uri: p.uri, small: pick(p.sizes, 640), big: pick(p.sizes, 1280) });
-  }
+  const frames = async (list: number[]) => {
+    const got: { p: typeof pics[number]; b: Uint8Array }[] = [];
+    for (const t of list) {
+      const r = await vimeo(`/videos/${vid}/pictures`, { method: "POST", body: JSON.stringify({ time: t, active: false }) });
+      if (!r.ok) { const e = await r.text(); if (!pics.length && r.status >= 400 && r.status < 500) throw new Error("장면 만들기 실패 " + r.status + " " + e.slice(0, 200)); continue; }
+      const j = await r.json();
+      const p = { t, uri: j.uri, small: pick(j.sizes, 640), big: pick(j.sizes, 1280) };
+      pics.push(p);
+      const b = await getBytes(p.small);
+      if (b) got.push({ p, b });
+    }
+    return got;
+  };
   try {
-    const smalls: Uint8Array[] = [], keep: typeof pics = [];
-    for (const p of pics) { const b = await getBytes(p.small); if (b) { smalls.push(b); keep.push(p); } }
+    const first = await frames(ts);
+    const smalls = first.map((x) => x.b), keep = first.map((x) => x.p);
     if (!smalls.length) return json({ id, error: "장면 이미지를 받지 못함" });
 
     // 2) Claude 판정
     const ai = await claude(v.title || id, smalls);
     const pickIdx = (k: number | null) => (Number.isInteger(k) && k! >= 0 && k! < keep.length ? k! : null);
-    const fi = pickIdx(ai.face), ci = pickIdx(ai.caption);
+    const fi = pickIdx(ai.face);
+    let ci = pickIdx(ai.caption), capNote = ai.captionNote, extraUsage = 0, rounds = 0;
+    while (ci === null && rounds < 2 && Date.now() - started < 80_000) {
+      rounds++;
+      const more = await frames(times(Number(duration) || 300, 8).map((t) => t + (rounds * 3.7)));
+      if (!more.length) break;
+      const r2 = await claude(v.title || id, more.map((x) => x.b), CAP_PROMPT);
+      extraUsage += (r2.usage?.input_tokens || 0) + (r2.usage?.output_tokens || 0) * 5;
+      const k = Number.isInteger(r2.caption) && r2.caption >= 0 && r2.caption < more.length ? r2.caption : null;
+      capNote = r2.captionNote || capNote;
+      if (k !== null) { smalls.push(more[k].b); keep.push(more[k].p); ci = keep.length - 1; }
+    }
 
     // 3) 고른 장면 저장
     const save = async (i: number | null, name: string) => {
@@ -148,7 +170,9 @@ Deno.serve(async (req) => {
       if (drop.length) await sb.storage.from("files").remove(drop);
       applied = true;
     }
-    return json({ id, ok: true, applied, duration, times: keep.map((p) => p.t), face: fi, caption: ci, faceNote: ai.faceNote, captionNote: ai.captionNote, facePath, capPath, candidates, usage: ai.usage });
+    return json({ id, ok: true, applied, duration, times: keep.map((p) => p.t), face: fi, caption: ci, faceNote: ai.faceNote, captionNote: capNote, rounds, extraUsage, facePath, capPath, candidates, usage: ai.usage });
+  } catch (e) {
+    return json({ id, error: String((e as Error)?.message || e).slice(0, 300) });
   } finally {
     // 4) 비메오에 만든 장면 이미지 정리
     for (const p of pics) { if (p.uri) await vimeo(p.uri, { method: "DELETE" }).catch(() => null); }
