@@ -128,6 +128,9 @@ dl.meta dd{margin:0;min-width:0;overflow-wrap:anywhere}
 .mlist button:first-child{border-top:0}
 .mlist button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
 .mlist .n{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.mlist .marea-h{font-weight:700;background:var(--sunk)}
+.mlist .marea-h .tw{font-style:normal;display:inline-block;width:16px;color:var(--muted)}
+.mlist .msub{padding-left:32px;font-weight:400}
 .steps{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
 .step{display:grid;grid-template-columns:32px 92px minmax(0,1fr);gap:12px;align-items:center;padding:10px 14px;border-top:1px solid var(--line)}
 .step:first-child{border-top:0}
@@ -916,17 +919,19 @@ function viewModules(){
   // 모듈의 영역: 그 모듈에 속한 사용 중 영상들의 영역 (둘 이상이면 양쪽에 모두 표시)
   const usedArea={}; S.videos.forEach(v=>{ if(v.status==='사용') usedArea[v.code]=v.area||''; });
   const modAreas = m => [...new Set(S.links.filter(l=>l.module===m.id && l.code in usedArea).map(l=>usedArea[l.code]||'-'))];
-  const areaCount = a => allMods.filter(m=> a==='-' ? (modAreas(m).includes('-') || !modAreas(m).length) : modAreas(m).includes(a)).length;
-  const mA = S.marea||'';
-  const mods = allMods.filter(m=> !mA || (mA==='-' ? (modAreas(m).includes('-') || !modAreas(m).length) : modAreas(m).includes(mA)));
-  if ((!S.mod || !mods.some(m=>m.id===S.mod)) && mods.length) S.mod = mods[0].id;
+  const inArea = (m,a) => { const ar=modAreas(m); return a==='-' ? (ar.includes('-') || !ar.length) : ar.includes(a); };
+  const groups = [...AREAS, '-'].map(a=>({a, label:a==='-'?'미지정':a, mods:allMods.filter(m=>inArea(m,a))})).filter(g=>g.mods.length);
+  if (!S.mod && allMods.length) S.mod = (groups[0]?.mods[0]||allMods[0]).id;
+  S.mopen ||= new Set(groups.filter(g=>g.mods.some(m=>m.id===S.mod)).map(g=>g.a).slice(0,1));
+  const act=new Set(S.videos.filter(v=>v.status==='사용').map(v=>v.code));
+  const modN = m => S.links.filter(l=>l.module===m.id&&act.has(l.code)).length;
+  const areaN = a => S.videos.filter(v=>v.status==='사용' && (a==='-' ? !v.area : v.area===a) && S.links.some(l=>l.code===v.code)).length;
   const cur = S.links.filter(l=>l.module===S.mod).sort((a,b)=>a.pos-b.pos);
   const byCode={}; S.videos.forEach(v=>{ if(!byCode[v.code] || v.status==='사용') byCode[v.code]=v; });
   const total = cur.reduce((s,l)=>{ const v=byCode[l.code]; return s+(v? Math.max(0,secs(v.duration)):0); },0);
   $('#app').innerHTML = `<h1>모듈별 보기</h1><p class="sub">표준 영상 모듈 리스트 V.4 기준 ${S.modules.length}개 강의. 강의를 고르면 편성 순서대로 영상을 보여 줍니다.</p>
-  <div class="reasons marea" role="group" aria-label="영역">${[['','전체',allMods.length], ...AREAS.map(a=>[a,a,areaCount(a)]), ['-','미지정',areaCount('-')]].filter(([v,,n])=>!v||n).map(([v,l,n])=>`<button aria-pressed="${mA===v}" data-ma="${esc(v)}">${esc(l)} ${n}</button>`).join('')}</div>
   <div class="mgrid">
-    <div class="mlist" role="list">${(()=>{const act=new Set(S.videos.filter(v=>v.status==='사용').map(v=>v.code));return mods.map(m=>{const n=S.links.filter(l=>l.module===m.id&&act.has(l.code)).length;return `<button aria-pressed="${m.id===S.mod}" data-m="${esc(m.id)}"><span>${esc(m.name)}</span><span class="n">${n}</span></button>`;}).join('');})()}</div>
+    <div class="mlist" role="tree">${groups.map(g=>{ const open=S.mopen.has(g.a); return `<button class="marea-h" aria-expanded="${open}" data-ma="${esc(g.a)}"><span><i class="tw">${open?'▾':'▸'}</i>${esc(g.label)}</span><span class="n">${areaN(g.a)}편</span></button>${open? g.mods.map(m=>`<button class="msub" aria-pressed="${m.id===S.mod}" data-m="${esc(m.id)}"><span>${esc(m.name)}</span><span class="n">${modN(m)}</span></button>`).join('') : ''}`; }).join('')}</div>
     <div style="min-width:0;display:flex;flex-direction:column;gap:10px">
       <div class="resultbar"><h2>${esc(modName(S.mod))}</h2><span class="mono">${cur.length}편 · 총 ${fmtDur(String(Math.floor(total/60))+':'+String(total%60))||'0:00'}</span></div>
       <div class="steps">${cur.map((l,i)=>{ const v=byCode[l.code];
@@ -940,7 +945,8 @@ function viewModules(){
   const ml = document.querySelector('.mlist'); if (ml) ml.scrollTop = keepScroll;
   if (viewModules.focus){ document.querySelector(`[data-m="${viewModules.focus}"]`)?.focus({preventScroll:true}); viewModules.focus=null; }
   document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{S.mod=b.dataset.m; viewModules.focus=b.dataset.m; render();});
-  document.querySelectorAll('[data-ma]').forEach(b=>b.onclick=()=>{S.marea=b.dataset.ma; S.mod=null; const ml=document.querySelector('.mlist'); if(ml) ml.scrollTop=0; render();});
+  document.querySelectorAll('[data-ma]').forEach(b=>b.onclick=()=>{ const a=b.dataset.ma; S.mopen.has(a)? S.mopen.delete(a) : S.mopen.add(a); viewModules.focusA=a; render(); });
+  if (viewModules.focusA){ document.querySelector(`[data-ma="${viewModules.focusA}"]`)?.focus({preventScroll:true}); viewModules.focusA=null; }
   bindRows($('#app'));
 }
 
