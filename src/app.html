@@ -73,11 +73,12 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none}
 .rec-step-h{display:flex;gap:10px;align-items:baseline;margin-bottom:4px;flex-wrap:wrap}
 .rec-no{font-family:var(--f-mono);font-size:12px;color:var(--accent);font-weight:600}
 .mod-cell{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.row{display:grid;grid-template-columns:136px minmax(0,1fr) 128px 64px 60px 92px;gap:12px;align-items:center;padding:10px 14px;border-top:1px solid var(--line);cursor:pointer;font-variant-numeric:tabular-nums}
+.row{display:grid;grid-template-columns:136px minmax(0,1fr) 76px 128px 64px 60px 92px;gap:12px;align-items:center;padding:10px 14px;border-top:1px solid var(--line);cursor:pointer;font-variant-numeric:tabular-nums}
 .row:first-child{border-top:0}
 .row:hover{background:var(--sunk)}
 .row.head{cursor:default;background:var(--sunk);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;padding-block:7px}
 .row .t{min-width:0}
+.row .area-cell{white-space:nowrap;font-size:13px}
 .row .t b{font-weight:600;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row .t span{display:block;color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mono{font-family:var(--f-mono);font-size:12.5px}
@@ -390,7 +391,7 @@ label.btn.thumb-both,.form label.btn.thumb-both{display:inline-flex;flex-directi
 <script>
 (() => {
 const S = {videos:[], modules:[], links:[], instructors:[], loaded:{v:false,m:false,l:false,i:false},
-  view:'search', q:'', f:{kind:'',module:'',inst:'',status:'사용'}, sort:'code', shown:60,
+  view:'search', q:'', f:{kind:'',area:'',module:'',inst:'',status:'사용'}, sort:'code', shown:60,
   mod:null, reason:'', canWrite:true, db:null, user:null, sample:null, uid:null, open:null, editing:false};
 const $ = (s, r=document) => r.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -455,9 +456,10 @@ function filtered(){
     if (S.f.kind && v.kind!==S.f.kind) return false;
     if (S.f.status && v.status!==S.f.status) return false;
     if (S.f.inst && v.instructor!==S.f.inst) return false;
+    if (S.f.area && (S.f.area==='-'? !!v.area : v.area!==S.f.area)) return false;
     if (S.f.module && !S.links.some(l=>l.module===S.f.module && l.code===v.code)) return false;
     if (!q) return true;
-    return [v.code,v.title,v.summary,v.client,v.course,v.category,v.instructor].join(' ').toLowerCase().includes(q);
+    return [v.code,v.title,v.summary,v.client,v.course,v.category,v.area,v.instructor].join(' ').toLowerCase().includes(q);
   });
   const cmp = {
     code:(x,y)=>x.code.localeCompare(y.code,'en',{numeric:true}) || (x.date||'').localeCompare(y.date||''),
@@ -468,6 +470,13 @@ function filtered(){
   }[S.sort];
   return a.sort(cmp);
 }
+const AREAS = ['리더십','조직관리','업무관리','자기관리'];
+// 모듈에 속한 영상들이 가장 많이 쓰는 영역 (새 영상 등록 시 기본값)
+function modArea(mods){
+  const n={}; for (const m of mods||[]) for (const l of S.links.filter(l=>l.module===m)) for (const v of S.videos.filter(v=>v.code===l.code&&v.area)) n[v.area]=(n[v.area]||0)+1;
+  return Object.entries(n).sort((a,b)=>b[1]-a[1])[0]?.[0]||'';
+}
+function areaOpts(cur){ const list=[...AREAS, ...(cur&&!AREAS.includes(cur)?[cur]:[])]; return opt('','선택 안 함',cur||'')+list.map(a=>opt(a,a,cur||'')).join(''); }
 function opt(v, label, cur){ return `<option value="${esc(v)}"${v===cur?' selected':''}>${esc(label)}</option>`; }
 function viewSearch(){
   const res = filtered();
@@ -477,24 +486,26 @@ function viewSearch(){
     <select id="sort" aria-label="정렬" style="width:auto">${opt('code','번호순',S.sort)}${opt('new','최신 제작순',S.sort)}${opt('old','오래된 순',S.sort)}${opt('long','길이 긴 순',S.sort)}${opt('short','길이 짧은 순',S.sort)}</select></div>
   <div class="filters">
     <label><span class="label">구분</span><select id="fKind">${opt('','전체',S.f.kind)}${opt('P','P 성과백신',S.f.kind)}${opt('H','H 판매용',S.f.kind)}${opt('C','C 기업맞춤',S.f.kind)}</select></label>
+    <label><span class="label">영역</span><select id="fArea">${opt('','전체',S.f.area)}${AREAS.map(a=>opt(a,a,S.f.area)).join('')}${opt('-','(미지정)',S.f.area)}</select></label>
     <label><span class="label">모듈</span><select id="fModule">${opt('','전체',S.f.module)}${mods.map(m=>opt(m.id,m.name,S.f.module)).join('')}</select></label>
     <label><span class="label">강사</span><select id="fInst">${opt('','전체',S.f.inst)}${S.instructors.map(i=>opt(i.id, i.name? `${i.id} · ${i.name}`: i.id, S.f.inst)).join('')}</select></label>
     <label><span class="label">상태</span><select id="fStatus">${opt('','전체',S.f.status)}${STATUSES.map(s=>opt(s,s,S.f.status)).join('')}</select></label>
   </div>
-  <div class="resultbar"><span><b>${res.length}</b>개 영상${S.q||S.f.kind||S.f.module||S.f.inst?' 검색됨':''}</span>
-    ${(S.q||S.f.kind||S.f.module||S.f.inst||S.f.status!=='사용')?'<button class="ghost" id="reset">필터 초기화</button>':''}</div>
+  <div class="resultbar"><span><b>${res.length}</b>개 영상${S.q||S.f.kind||S.f.area||S.f.module||S.f.inst?' 검색됨':''}</span>
+    ${(S.q||S.f.kind||S.f.area||S.f.module||S.f.inst||S.f.status!=='사용')?'<button class="ghost" id="reset">필터 초기화</button>':''}</div>
   <div class="list" role="list">
-    <div class="row head"><span>번호</span><span>제목 · 내용</span><span class="hide-s">모듈</span><span class="hide-s">강사</span><span>길이</span><span class="hide-s">제작일자</span></div>
+    <div class="row head"><span>번호</span><span>제목 · 내용</span><span class="hide-s">영역</span><span class="hide-s">모듈</span><span class="hide-s">강사</span><span>길이</span><span class="hide-s">제작일자</span></div>
     ${res.slice(0,S.shown).map(rowHtml).join('') || '<div class="empty">조건에 맞는 영상이 없습니다. 검색어나 필터를 바꿔 보세요.</div>'}
   </div>
   ${res.length>S.shown?`<div class="more"><button id="more">${res.length-S.shown}개 더 보기</button></div>`:''}`;
   const q=$('#q'); q.oninput=()=>{ S.q=q.value; S.shown=60; clearTimeout(viewSearch.t); viewSearch.t=setTimeout(()=>{ const pos=q.selectionStart; render(); const n=$('#q'); n.focus(); n.setSelectionRange(pos,pos); },180); };
   $('#sort').onchange=e=>{S.sort=e.target.value; render();};
   $('#fKind').onchange=e=>{S.f.kind=e.target.value;S.shown=60;render();};
+  $('#fArea').onchange=e=>{S.f.area=e.target.value;S.shown=60;render();};
   $('#fModule').onchange=e=>{S.f.module=e.target.value;S.shown=60;render();};
   $('#fInst').onchange=e=>{S.f.inst=e.target.value;S.shown=60;render();};
   $('#fStatus').onchange=e=>{S.f.status=e.target.value;S.shown=60;render();};
-  $('#reset')?.addEventListener('click',()=>{S.q='';S.f={kind:'',module:'',inst:'',status:'사용'};render();});
+  $('#reset')?.addEventListener('click',()=>{S.q='';S.f={kind:'',area:'',module:'',inst:'',status:'사용'};render();});
   $('#more')?.addEventListener('click',()=>{S.shown+=100;render();});
   bindRows();
 }
@@ -506,6 +517,7 @@ function rowHtml(v){
   return `<div class="row" role="listitem" tabindex="0" data-id="${esc(v.id)}">
     <span class="codes">${codeBadge(v.code, v.kind)}${pb}</span>
     <span class="t"><b>${esc(v.title)}${st}</b><span>${esc(sub)}</span></span>
+    <span class="hide-s area-cell">${esc(v.area||'—')}</span>
     <span class="hide-s mod-cell" title="${esc(videoModules(v).join(', '))}">${esc(videoModules(v).join(', ')||'—')}</span>
     <span class="mono hide-s">${esc(v.instructor||'—')}</span>
     <span class="mono">${esc(fmtDur(v.duration)||'—')}</span>
@@ -945,7 +957,7 @@ function viewCheck(c){
 }
 
 /* add */
-const DRAFT0 = () => ({script:'', scriptName:'', thumbFile:null, thumbPrev:'', thumbFile2:null, thumbPrev2:'', link:'',vtitle:'',instructor:'',duration:'',date:'',keymsg:'',summary:'',modules:[],client:'',course:'',prod:false,ptitle:'',pkind:'H'});
+const DRAFT0 = () => ({area:'', script:'', scriptName:'', thumbFile:null, thumbPrev:'', thumbFile2:null, thumbPrev2:'', link:'',vtitle:'',instructor:'',duration:'',date:'',keymsg:'',summary:'',modules:[],client:'',course:'',prod:false,ptitle:'',pkind:'H'});
 const draft = DRAFT0();
 function parseVimeoTitle(t){
   const m = String(t||'').trim().match(/^([PHCphc])\s*0*(\d{1,3})((?:-\d+)?)\s*[_\s]\s*(.+)$/);
@@ -978,6 +990,7 @@ function viewAdd(){
         ${dup&&dup.length?`<span class="hint" style="color:var(--warn)">중복 번호: ${esc(p.code)}가 이미 ${dup.length}건 있습니다. 리뉴얼이면 그대로 저장하고, 기존 영상 상태를 바꿔 주세요.</span>`:''}</label>
       <label><span class="label">제목 (자동)</span><input value="${esc(p.title)}" disabled></label>`}
       <label><span class="label">강사</span><select id="aInst">${opt('','선택',draft.instructor)}${S.instructors.map(i=>opt(i.id,i.name?`${i.id} · ${i.name}`:i.id,draft.instructor)).join('')}</select></label>
+      <label><span class="label">영역 <span class="hint">비우면 모듈에 따라 자동</span></span><select id="aArea">${areaOpts(draft.area)}</select></label>
       <label><span class="label">길이 (분:초)</span><input id="aDur" placeholder="06:24" value="${esc(draft.duration)}" inputmode="numeric"></label>
       <label><span class="label">제작일자</span><input id="aDate" type="date" value="${esc(draft.date)}"></label>
       ${kindNow==='C'?`<label><span class="label">고객사</span><input id="aClient" value="${esc(draft.client)}"></label><label class="full"><span class="label">과정명</span><input id="aCourse" value="${esc(draft.course)}"></label>`:'<span></span>'}
@@ -1003,6 +1016,7 @@ function viewAdd(){
   const keep = (id, k) => { const el=$('#'+id); if(el) el.addEventListener('input',()=>{ draft[k]=el.value; }); };
   keep('aDur','duration'); keep('aDate','date'); keep('aClient','client'); keep('aCourse','course');
   $('#aInst').onchange=e=>draft.instructor=e.target.value;
+  $('#aArea').onchange=e=>draft.area=e.target.value;
   for (const [id,k] of [['aLink','link'],['aTitle','vtitle']]) $('#'+id)?.addEventListener('change',e=>{ draft[k]=e.target.value.trim(); render(); });
   $('#aProd').onchange=e=>{ draft.prod=e.target.checked; render(); };
   $('#aPTitle')?.addEventListener('input',e=>{ draft.ptitle=e.target.value; const b=$('#addForm [type=submit]'); if(b) b.disabled=!(S.canWrite&&draft.ptitle.trim()); });
@@ -1029,7 +1043,7 @@ function viewAdd(){
     if (draft.prod){
       const title=draft.ptitle.trim(); if(!title) return;
       const tcode='T-'+Date.now().toString(36);
-      const doc = {code:tcode, kind:draft.pkind, title, instructor:draft.instructor, link:'', duration:fmtDur(draft.duration)||draft.duration, date:draft.date,
+      const doc = {code:tcode, kind:draft.pkind, title, instructor:draft.instructor, area:draft.area||modArea(draft.modules), link:'', duration:fmtDur(draft.duration)||draft.duration, date:draft.date,
         summary:draft.summary.trim(), detail:'', category:'', review:false, maker:'', note:'', related:[], client:draft.pkind==='C'?draft.client:'', course:draft.pkind==='C'?draft.course:'', status:'제작 중', script:draft.script, scriptName:draft.scriptName, sheetModule: draft.modules.map(modName).join(', '), createdAt:new Date().toISOString()};
       try{
         await S.db.doc('videos/'+tcode).set(doc);
@@ -1044,7 +1058,7 @@ function viewAdd(){
     const pp=parseVimeoTitle(draft.vtitle); if(!pp.code||!linkId(draft.link)) return;
     const same=S.videos.filter(v=>v.code===pp.code).length;
     const id = same? `${pp.code}~${same+1}` : pp.code;
-    const doc = {code:pp.code, kind:pp.code[0], title:pp.title, instructor:draft.instructor, link:'https://player.vimeo.com/video/'+linkId(draft.link),
+    const doc = {code:pp.code, kind:pp.code[0], title:pp.title, instructor:draft.instructor, area:draft.area||modArea(draft.modules), link:'https://player.vimeo.com/video/'+linkId(draft.link),
       duration:fmtDur(draft.duration)||draft.duration, date:draft.date, 
       summary:draft.summary.trim(), detail:'', category:'', review:false, maker:'', note:'', related:[], client:draft.client, course:draft.course, status:'사용', script:draft.script, scriptName:draft.scriptName, sheetModule: draft.modules.map(modName).join(', '), createdAt:new Date().toISOString()};
     try{
@@ -1385,6 +1399,7 @@ function renderSheet(){
       <dt>상태</dt><dd>${v.status==='사용'?'사용':`<span class="pill ${v.status==='삭제'?'bad':'warn'}">${esc(v.status)}</span>`}</dd>
       ${v.remark?`<dt>비고</dt><dd class="pre" style="margin:0">${esc(v.remark)}</dd>`:''}
       ${v.kind==='C'?`<dt>고객사</dt><dd>${esc(v.client||'—')}</dd><dt>과정명</dt><dd>${esc(v.course||'—')}</dd>`:''}
+      <dt>영역</dt><dd>${esc(v.area||'—')}</dd>
       <dt>모듈</dt><dd>${mods.length? mods.map(esc).join(', ') : '—'}</dd>
       ${v.target?`<dt>추천 대상</dt><dd>${esc(v.target)}</dd>`:''}
       ${v.pitch?`<dt>카달로그 요약</dt><dd>${esc(v.pitch)}</dd>`:''}
@@ -1435,7 +1450,7 @@ async function loadHistory(id){
 }
 async function logHistory(){}
 
-const FIELDS = {script:'스크립트',scriptName:'스크립트',target:'추천 대상',pitch:'카달로그 요약',sheetModule:'모듈',tool:'Tool',title:'제목',instructor:'강사',link:'링크',duration:'길이',date:'제작일자',summary:'내용 요약',detail:'영상 내용',status:'상태',related:'연결 영상',client:'고객사',course:'과정명',remark:'비고',review:'리뷰노트'};
+const FIELDS = {area:'영역',script:'스크립트',scriptName:'스크립트',target:'추천 대상',pitch:'카달로그 요약',sheetModule:'모듈',tool:'Tool',title:'제목',instructor:'강사',link:'링크',duration:'길이',date:'제작일자',summary:'내용 요약',detail:'영상 내용',status:'상태',related:'연결 영상',client:'고객사',course:'과정명',remark:'비고',review:'리뷰노트'};
 let editMods=[];
 function editHtml(v){
   editMods = S.links.filter(l=>l.code===v.code).map(l=>l.module).filter((x,i,a)=>a.indexOf(x)===i);
@@ -1444,6 +1459,7 @@ function editHtml(v){
     <label class="full"><span class="label">일련번호 (편집이 끝나면 입력)</span><input id="eCode" placeholder="예: H210" style="text-transform:uppercase"></label>`:''}
     <label class="full"><span class="label">제목</span><input id="eTitle" value="${esc(v.title)}"></label>
     <label><span class="label">강사</span><select id="eInst">${opt('','선택',v.instructor)}${S.instructors.map(i=>opt(i.id,i.name?`${i.id} · ${i.name}`:i.id,v.instructor)).join('')}${v.instructor&&!instSet().has(v.instructor)?opt(v.instructor,v.instructor+' (목록에 없음)',v.instructor):''}</select></label>
+    <label><span class="label">영역</span><select id="eArea">${areaOpts(v.area)}</select></label>
     <label><span class="label">상태</span><select id="eStatus">${STATUSES.map(s=>opt(s,s,v.status)).join('')}</select></label>
     <label class="full"><span class="label">비메오 링크</span><input id="eLink" value="${esc(v.link)}"></label>
     <label><span class="label">길이</span><input id="eDur" value="${esc(v.duration)}"></label>
@@ -1468,7 +1484,7 @@ function bindEdit(v){
   bindModuleChips('e', editMods, rebind);
   $('#eCancel').onclick=()=>{S.editing=false;renderSheet();};
   $('#editForm').onsubmit=async e=>{ e.preventDefault();
-    const nv = {title:$('#eTitle').value.trim(), instructor:$('#eInst').value, status:$('#eStatus').value, link:$('#eLink').value.trim(),
+    const nv = {title:$('#eTitle').value.trim(), instructor:$('#eInst').value, area:$('#eArea').value, status:$('#eStatus').value, link:$('#eLink').value.trim(),
       duration:fmtDur($('#eDur').value.trim())||$('#eDur').value.trim(), date:$('#eDate').value.trim(),
       summary:$('#eKm').value, target:$('#eTarget').value.trim(), pitch:$('#ePitch').value.trim(), detail:v.detail||'', remark:$('#eNote').value.trim(), review:$('#eReview').checked, tool:$('#eTool').checked, sheetModule:editMods.length? editMods.map(modName).join(', ') : (v.sheetModule||''),
       related:$('#eRel').value.split(/[,\s]+/).map(s=>s.trim().toUpperCase()).filter(Boolean)};
@@ -1492,7 +1508,7 @@ function bindEdit(v){
       const log = changed.map(k=>FIELDS[k]||k); if(add.length||rm.length) log.push('모듈');
       if (log.length){ await logHistory(v.id, log); toast('저장했습니다'); } else toast('바뀐 내용이 없습니다');
       S.editing=false; renderSheet();
-      const SHEET_KEYS=['title','link','sheetModule','duration','status','remark'];
+      const SHEET_KEYS=['title','link','sheetModule','duration','status','remark','area','summary','instructor','date','review','tool','related'];
       if (v.kind==='H' && changed.some(k=>SHEET_KEYS.includes(k))) runSync(v.id, {...v, ...nv}, v.link, v.title, '저장했습니다');
     }catch(err){ writeFail(err); }
   };

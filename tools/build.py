@@ -66,7 +66,7 @@ async function sheetCall(payload){
 }
 const sheetVideo = v => ({code:v.code, title:v.title||'', link:v.link||'', sheetModule:v.sheetModule||'', duration:fmtDur(v.duration)||v.duration||'',
   status:v.status||'', remark:v.remark||'', summary:v.summary||'', summaryLine:v.summaryLine||'', instructor:v.instructor||'', maker:v.maker||'',
-  date:v.date||'', tool:v.tool||'', note:v.note||'', review:!!v.review, category:v.category||'', related:v.related||[]});
+  date:v.date||'', tool:v.tool||'', note:v.note||'', review:!!v.review, area:v.area||'', related:v.related||[]});
 async function runSync(id, v, prevLink, prevTitle, label){
   const pre = label ? label+' · ' : '';
   const cur = () => S.videos.find(x=>x.id===id);

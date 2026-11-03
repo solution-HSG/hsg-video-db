@@ -122,6 +122,7 @@ function syncList_(v, prevLink, prevTitle) {
   put(L.code, v.code);
   const cat = s_(v.category).split('/').map(s_).filter(Boolean);
   if (cat.length === 4) { put(L.d1, cat[0]); put(L.d2, cat[1]); put(L.d3, cat[2]); put(L.topic, cat[3]); }
+  put(L.d2, v.area);  // 영역구분: 사이트의 '영역' 값
   if (Array.isArray(v.related) && v.related.length) put(L.perf, v.related.join(', '));
   put(L.module, v.sheetModule);
   put(L.title, v.title);
