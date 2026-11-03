@@ -136,6 +136,20 @@ dl.meta dd{margin:0;min-width:0;overflow-wrap:anywhere}
 .mlist .marea-h{font-weight:700;background:var(--sunk)}
 .mlist .marea-h .tw{font-style:normal;display:inline-block;width:16px;color:var(--muted)}
 .mlist .msub{padding-left:32px;font-weight:400}
+.mchart{margin-bottom:16px;display:block}
+.mchart-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.mchart-h h2{margin:0;font-size:15px}
+.mchart-h button{margin-left:auto;font-size:13px}
+.mchart-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px 24px;margin-top:12px}
+.mchart-a{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:4px;margin-bottom:4px}
+.mchart-a span{font-size:12px;color:var(--muted);font-family:var(--f-mono)}
+.mbar{display:grid;grid-template-columns:minmax(0,9.5em) minmax(40px,1fr) 2em;gap:8px;align-items:center;width:100%;border:0;background:none;padding:4px 2px;border-radius:6px;text-align:left;font-weight:400;cursor:pointer;color:var(--fg)}
+.mbar:hover,.mbar:focus-visible{background:var(--sunk)}
+.mbar.on{background:var(--accent-soft)}
+.mbar-l{font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mbar-t{height:10px;position:relative}
+.mbar-t i{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:0 4px 4px 0;min-width:3px}
+.mbar-v{font-family:var(--f-mono);font-size:12px;color:var(--muted);text-align:right}
 .steps{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
 .step{display:grid;grid-template-columns:32px 92px minmax(0,1fr);gap:12px;align-items:center;padding:10px 14px;border-top:1px solid var(--line)}
 .step:first-child{border-top:0}
@@ -1175,11 +1189,20 @@ function viewModules(){
   S.mopen ||= new Set(groups.filter(g=>g.mods.some(m=>m.id===S.mod)).map(g=>g.a).slice(0,1));
   const act=new Set(S.videos.filter(v=>v.status==='사용').map(v=>v.code));
   const modN = m => S.links.filter(l=>l.module===m.id&&act.has(l.code)).length;
+  const vArea = {}; S.videos.forEach(v=>{ if(v.status==='사용') vArea[v.code]=v.area||'-'; });
+  const chart = [...AREAS,'-'].map(a=>({a, label:a==='-'?'미지정':a, rows:allMods.map(m=>({m, n:new Set(S.links.filter(l=>l.module===m.id && vArea[l.code]===a).map(l=>l.code)).size})).filter(r=>r.n).sort((x,y)=>y.n-x.n||x.m.name.localeCompare(y.m.name,'ko'))})).filter(g=>g.rows.length);
+  const cMax = Math.max(1, ...chart.flatMap(g=>g.rows.map(r=>r.n)));
+  S.mchart ??= true;
   const areaN = a => S.videos.filter(v=>v.status==='사용' && (a==='-' ? !v.area : v.area===a) && S.links.some(l=>l.code===v.code)).length;
   const cur = S.links.filter(l=>l.module===S.mod).sort((a,b)=>a.pos-b.pos);
   const byCode={}; S.videos.forEach(v=>{ if(!byCode[v.code] || v.status==='사용') byCode[v.code]=v; });
   const total = cur.reduce((s,l)=>{ const v=byCode[l.code]; return s+(v? Math.max(0,secs(v.duration)):0); },0);
   $('#app').innerHTML = `<h1>모듈별 보기</h1><p class="sub">표준 영상 모듈 리스트 V.4 기준 ${S.modules.length}개 강의. 강의를 고르면 편성 순서대로 영상을 보여 줍니다.</p>
+  <section class="card mchart">
+    <div class="mchart-h"><h2>영역 · 모듈별 영상 수</h2><span class="hint">사용 중 영상 기준 · 막대를 누르면 그 모듈로 이동</span><button type="button" class="ghost" id="mchartT" aria-expanded="${S.mchart}">${S.mchart?'도표 접기':'도표 펼치기'}</button></div>
+    ${S.mchart?`<div class="mchart-g">${chart.map(g=>`<div class="mchart-c"><div class="mchart-a"><b>${esc(g.label)}</b><span>${g.rows.reduce((s,r)=>s+r.n,0)}편 · 모듈 ${g.rows.length}개</span></div>
+      ${g.rows.map(r=>`<button type="button" class="mbar${r.m.id===S.mod?' on':''}" data-mb="${esc(r.m.id)}" data-ar="${esc(g.a)}" title="${esc(g.label)} · ${esc(r.m.name)}: ${r.n}편"><span class="mbar-l">${esc(r.m.name)}</span><span class="mbar-t"><i style="width:${(r.n/cMax*100).toFixed(1)}%"></i></span><span class="mbar-v">${r.n}</span></button>`).join('')}</div>`).join('')}</div>`:''}
+  </section>
   <div class="mgrid">
     <div class="mlist" role="tree">${groups.map(g=>{ const open=S.mopen.has(g.a); return `<button class="marea-h" aria-expanded="${open}" data-ma="${esc(g.a)}"><span><i class="tw">${open?'▾':'▸'}</i>${esc(g.label)}</span><span class="n">${areaN(g.a)}편</span></button>${open? g.mods.map(m=>`<button class="msub" aria-pressed="${m.id===S.mod}" data-m="${esc(m.id)}"><span>${esc(m.name)}</span><span class="n">${modN(m)}</span></button>`).join('') : ''}`; }).join('')}</div>
     <div style="min-width:0;display:flex;flex-direction:column;gap:10px">
@@ -1196,6 +1219,8 @@ function viewModules(){
   if (viewModules.focus){ document.querySelector(`[data-m="${viewModules.focus}"]`)?.focus({preventScroll:true}); viewModules.focus=null; }
   document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{S.mod=b.dataset.m; viewModules.focus=b.dataset.m; render();});
   document.querySelectorAll('[data-ma]').forEach(b=>b.onclick=()=>{ const a=b.dataset.ma; S.mopen.has(a)? S.mopen.delete(a) : S.mopen.add(a); viewModules.focusA=a; render(); });
+  $('#mchartT')?.addEventListener('click',()=>{ S.mchart=!S.mchart; render(); });
+  document.querySelectorAll('[data-mb]').forEach(b=>b.onclick=()=>{ S.mod=b.dataset.mb; S.mopen.add(b.dataset.ar); viewModules.focus=b.dataset.mb; render(); document.querySelector('.mgrid')?.scrollIntoView({behavior:'smooth',block:'start'}); });
   if (viewModules.focusA){ document.querySelector(`[data-ma="${viewModules.focusA}"]`)?.focus({preventScroll:true}); viewModules.focusA=null; }
   bindRows($('#app'));
 }
