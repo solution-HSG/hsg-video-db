@@ -6,7 +6,8 @@
 <meta name="robots" content="noindex, nofollow">
 <title>HSG 영상 DB</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans+KR:wght@400;500;700;800;900&family=Montserrat:wght@700;800&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800;900&family=Montserrat:wght@700;800&display=swap">
 <style>
 /* Layout: a library card catalogue — sticky top bar with tabs, a filter rail beside a dense record list, a record sheet that slides in from the right. */
 :root{
@@ -14,8 +15,8 @@
   --accent:#1f5f8b; --accent-ink:#ffffff; --accent-soft:#e1edf6;
   --p:#2f7a55; --p-soft:#e2f1e8; --h:#1f5f8b; --h-soft:#e1edf6; --c:#7a4a8f; --c-soft:#f0e6f4;
   --warn:#a35d00; --warn-soft:#fdf0dc; --bad:#b3362c; --bad-soft:#fbe5e3; --good:#2f7a55;
-  --f-body:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
-  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --f-body:"Pretendard Variable",Pretendard,system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-mono:"Pretendard Variable",Pretendard,system-ui,sans-serif;
   --r:8px;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
@@ -29,7 +30,8 @@
   --p:#7cc79f; --p-soft:#1b3428; --h:#6fb0de; --h-soft:#1c3446; --c:#c49ad6; --c-soft:#33253b;
   --warn:#f0b35a; --warn-soft:#3a2a12; --bad:#f08a80; --bad-soft:#3d1f1c; --good:#7cc79f; color-scheme:dark}
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:14px;line-height:1.55}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:14px;line-height:1.55;letter-spacing:-0.01em;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+button,input,select,textarea{font-family:inherit}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
 .wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:1280px;margin:0 auto}
 header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
