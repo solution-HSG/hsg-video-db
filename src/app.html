@@ -912,12 +912,19 @@ async function catPdf(){
 /* modules */
 function viewModules(){
   const keepScroll = document.querySelector('.mlist')?.scrollTop || 0;
-  const mods = S.modules.slice().sort((a,b)=>a.name.localeCompare(b.name,'ko'));
-  if (!S.mod && mods.length) S.mod = mods[0].id;
+  const allMods = S.modules.slice().sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+  // 모듈의 영역: 그 모듈에 속한 사용 중 영상들의 영역 (둘 이상이면 양쪽에 모두 표시)
+  const usedArea={}; S.videos.forEach(v=>{ if(v.status==='사용') usedArea[v.code]=v.area||''; });
+  const modAreas = m => [...new Set(S.links.filter(l=>l.module===m.id && l.code in usedArea).map(l=>usedArea[l.code]||'-'))];
+  const areaCount = a => allMods.filter(m=> a==='-' ? (modAreas(m).includes('-') || !modAreas(m).length) : modAreas(m).includes(a)).length;
+  const mA = S.marea||'';
+  const mods = allMods.filter(m=> !mA || (mA==='-' ? (modAreas(m).includes('-') || !modAreas(m).length) : modAreas(m).includes(mA)));
+  if ((!S.mod || !mods.some(m=>m.id===S.mod)) && mods.length) S.mod = mods[0].id;
   const cur = S.links.filter(l=>l.module===S.mod).sort((a,b)=>a.pos-b.pos);
   const byCode={}; S.videos.forEach(v=>{ if(!byCode[v.code] || v.status==='사용') byCode[v.code]=v; });
   const total = cur.reduce((s,l)=>{ const v=byCode[l.code]; return s+(v? Math.max(0,secs(v.duration)):0); },0);
   $('#app').innerHTML = `<h1>모듈별 보기</h1><p class="sub">표준 영상 모듈 리스트 V.4 기준 ${S.modules.length}개 강의. 강의를 고르면 편성 순서대로 영상을 보여 줍니다.</p>
+  <div class="reasons marea" role="group" aria-label="영역">${[['','전체',allMods.length], ...AREAS.map(a=>[a,a,areaCount(a)]), ['-','미지정',areaCount('-')]].filter(([v,,n])=>!v||n).map(([v,l,n])=>`<button aria-pressed="${mA===v}" data-ma="${esc(v)}">${esc(l)} ${n}</button>`).join('')}</div>
   <div class="mgrid">
     <div class="mlist" role="list">${(()=>{const act=new Set(S.videos.filter(v=>v.status==='사용').map(v=>v.code));return mods.map(m=>{const n=S.links.filter(l=>l.module===m.id&&act.has(l.code)).length;return `<button aria-pressed="${m.id===S.mod}" data-m="${esc(m.id)}"><span>${esc(m.name)}</span><span class="n">${n}</span></button>`;}).join('');})()}</div>
     <div style="min-width:0;display:flex;flex-direction:column;gap:10px">
@@ -933,6 +940,7 @@ function viewModules(){
   const ml = document.querySelector('.mlist'); if (ml) ml.scrollTop = keepScroll;
   if (viewModules.focus){ document.querySelector(`[data-m="${viewModules.focus}"]`)?.focus({preventScroll:true}); viewModules.focus=null; }
   document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{S.mod=b.dataset.m; viewModules.focus=b.dataset.m; render();});
+  document.querySelectorAll('[data-ma]').forEach(b=>b.onclick=()=>{S.marea=b.dataset.ma; S.mod=null; const ml=document.querySelector('.mlist'); if(ml) ml.scrollTop=0; render();});
   bindRows($('#app'));
 }
 
