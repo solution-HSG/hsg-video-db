@@ -17,18 +17,19 @@
   --warn:#a35d00; --warn-soft:#fdf0dc; --bad:#b3362c; --bad-soft:#fbe5e3; --good:#2f7a55;
   --f-body:"Pretendard Variable",Pretendard,system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
   --f-mono:"Pretendard Variable",Pretendard,system-ui,sans-serif;
+  --a1:#2f6fd0; --a2:#12917f; --a3:#d07a1f; --a4:#8a55b5;
   --r:8px;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0f151b; --surface:#16202a; --sunk:#1c2833; --line:#2b3a48; --fg:#e4ebf1; --muted:#93a3b2;
   --accent:#6fb0de; --accent-ink:#0b141c; --accent-soft:#1c3446;
   --p:#7cc79f; --p-soft:#1b3428; --h:#6fb0de; --h-soft:#1c3446; --c:#c49ad6; --c-soft:#33253b;
-  --warn:#f0b35a; --warn-soft:#3a2a12; --bad:#f08a80; --bad-soft:#3d1f1c; --good:#7cc79f; color-scheme:dark}}
+  --warn:#f0b35a; --warn-soft:#3a2a12; --bad:#f08a80; --bad-soft:#3d1f1c; --good:#7cc79f; --a1:#5a8fe0; --a2:#22a08c; --a3:#c98030; --a4:#9c70c8; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0f151b; --surface:#16202a; --sunk:#1c2833; --line:#2b3a48; --fg:#e4ebf1; --muted:#93a3b2;
   --accent:#6fb0de; --accent-ink:#0b141c; --accent-soft:#1c3446;
   --p:#7cc79f; --p-soft:#1b3428; --h:#6fb0de; --h-soft:#1c3446; --c:#c49ad6; --c-soft:#33253b;
-  --warn:#f0b35a; --warn-soft:#3a2a12; --bad:#f08a80; --bad-soft:#3d1f1c; --good:#7cc79f; color-scheme:dark}
+  --warn:#f0b35a; --warn-soft:#3a2a12; --bad:#f08a80; --bad-soft:#3d1f1c; --good:#7cc79f; --a1:#5a8fe0; --a2:#22a08c; --a3:#c98030; --a4:#9c70c8; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:14px;line-height:1.55;letter-spacing:-0.01em;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
 button,input,select,textarea{font-family:inherit}
@@ -406,6 +407,37 @@ label.btn.thumb-both,.form label.btn.thumb-both{display:inline-flex;flex-directi
 .ct-row span{color:#6c6676;font-size:15px}
 .ct-row b{font-weight:600;word-break:break-all}
 
+/* 영역 색 · 상태 배지 · 목록 요약 · 상세 묶음 */
+.area-tag{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.area-tag i{width:8px;height:8px;border-radius:2px;background:var(--ac,var(--muted));flex:none}
+.area-none{color:var(--muted);opacity:.6}
+.st{font-size:11.5px;padding:1px 7px;border-radius:999px;display:inline-block;white-space:nowrap;font-weight:500;vertical-align:1px;margin-left:4px}
+.st-use{background:var(--p-soft);color:var(--good)}
+.row .t span.st{display:inline-block;overflow:visible;font-size:11px;line-height:1.5;padding:0 7px}
+.row .t span.st-use{color:var(--good)}
+.row .t span.st-wip{color:var(--warn)}
+.row .t span.st-del{color:var(--bad)}
+.st-wip{background:var(--warn-soft);color:var(--warn)}
+.st-off{background:var(--sunk);color:var(--muted);border:1px solid var(--line)}
+.st-del{background:var(--bad-soft);color:var(--bad)}
+.dbsum{display:flex;align-items:center;gap:8px 18px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;margin-bottom:12px}
+.dbsum-t{display:flex;align-items:baseline;gap:8px;white-space:nowrap}
+.dbsum-t b{font-size:20px;font-weight:700}
+.dbsum-t span{color:var(--muted);font-size:13px}
+.dbsum-a{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.dbsum-a .lab{color:var(--muted);font-size:12px;margin-right:2px}
+.dbsum-a button{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.dbsum-a button i{width:8px;height:8px;border-radius:2px;background:var(--ac,var(--muted))}
+.dbsum-a button em{font-style:normal;color:var(--muted);font-weight:600}
+.dbsum-a button:hover{border-color:var(--ac,var(--accent))}
+.dbsum-a button[aria-pressed="true"]{border-color:var(--ac,var(--accent));box-shadow:inset 0 0 0 1px var(--ac,var(--accent))}
+.metagrps{display:flex;flex-direction:column;gap:10px}
+.metagrp{border:1px solid var(--line);border-radius:var(--r);padding:10px 14px 12px}
+.metagrp h3{margin:0 0 8px;font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.02em}
+.mchart-a b{display:inline-flex;align-items:center;gap:6px}
+.mchart-a b i,.marea-h .dot{width:8px;height:8px;border-radius:2px;background:var(--ac,var(--muted));display:inline-block;margin-right:6px}
+.mchart-c .mbar-t i{background:var(--ac,var(--accent))}
+
 .linkish{background:none;border:0;padding:0;color:var(--accent);font:inherit;cursor:pointer;text-decoration:underline}
 .login-wrap{position:fixed;inset:0;background:rgba(15,20,30,.45);display:grid;place-items:center;z-index:200;padding:16px}
 .login{width:min(380px,100%);display:block}
@@ -754,6 +786,10 @@ function filtered(){
   return a.sort(cmp);
 }
 const AREAS = ['리더십','조직관리','업무관리','자기관리'];
+const areaVar = a => { const i=AREAS.indexOf(a); return i<0 ? '' : `--ac:var(--a${i+1})`; };
+const areaTag = a => a ? `<span class="area-tag" style="${areaVar(a)}"><i></i>${esc(a)}</span>` : '<span class="area-none">—</span>';
+const ST_CLS = {'사용':'st-use','제작 중':'st-wip','미사용':'st-off','삭제':'st-del','리뉴얼로 대체됨':'st-off'};
+const statusPill = (st, remark) => st ? `<span class="st ${ST_CLS[st]||'st-off'}"${remark?` title="${esc(remark)}"`:''}>${esc(st)}</span>` : '';
 // 모듈에 속한 영상들이 가장 많이 쓰는 영역 (새 영상 등록 시 기본값)
 function modArea(mods){
   const n={}; for (const m of mods||[]) for (const l of S.links.filter(l=>l.module===m)) for (const v of S.videos.filter(v=>v.code===l.code&&v.area)) n[v.area]=(n[v.area]||0)+1;
@@ -764,7 +800,15 @@ function opt(v, label, cur){ return `<option value="${esc(v)}"${v===cur?' select
 function viewSearch(){
   const res = filtered();
   const mods = S.modules.slice().sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+  const used = S.videos.filter(v=>v.status==='사용');
+  const kN = k => used.filter(v=>v.kind===k).length;
+  const hUsed = used.filter(v=>v.kind==='H');
+  const aN = a => hUsed.filter(v=>a==='-' ? !v.area : v.area===a).length;
   $('#app').innerHTML = `
+  <div class="dbsum">
+    <div class="dbsum-t"><b>${used.length}</b>편 사용 중<span>H ${kN('H')} · P ${kN('P')} · C ${kN('C')}</span></div>
+    <div class="dbsum-a"><span class="lab">H 영역</span>${[...AREAS,'-'].map(a=>{ const n=aN(a); if(a==='-'&&!n) return ''; return `<button type="button" data-oa="${esc(a)}" style="${areaVar(a)}" aria-pressed="${S.f.area===a}" title="${a==='-'?'영역 미지정':a} H 영상만 보기"><i></i>${a==='-'?'미지정':esc(a)} <em>${n}</em></button>`; }).join('')}</div>
+  </div>
   <div class="searchrow"><div class="q"><input id="q" type="search" placeholder="일련번호, 제목, 내용, 고객사로 검색" value="${esc(S.q)}" aria-label="검색어"></div>
     <select id="sort" aria-label="정렬" style="width:auto">${opt('code','번호순',S.sort)}${opt('new','최신 제작순',S.sort)}${opt('old','오래된 순',S.sort)}${opt('long','길이 긴 순',S.sort)}${opt('short','길이 짧은 순',S.sort)}</select></div>
   <div class="filters">
@@ -785,6 +829,7 @@ function viewSearch(){
   $('#sort').onchange=e=>{S.sort=e.target.value; render();};
   $('#fKind').onchange=e=>{S.f.kind=e.target.value;S.shown=60;render();};
   $('#fArea').onchange=e=>{S.f.area=e.target.value;S.shown=60;render();};
+  document.querySelectorAll('[data-oa]').forEach(b=>b.onclick=()=>{ const a=b.dataset.oa; if(S.f.area===a){ S.f.area=''; } else { S.f.area=a; S.f.kind='H'; S.f.status='사용'; } S.shown=60; render(); });
   $('#fModule').onchange=e=>{S.f.module=e.target.value;S.shown=60;render();};
   $('#fInst').onchange=e=>{S.f.inst=e.target.value;S.shown=60;render();};
   $('#fStatus').onchange=e=>{S.f.status=e.target.value;S.shown=60;render();};
@@ -861,13 +906,13 @@ function summaryBlock(v){
 }
 function rowHtml(v){
   const sub = (v.summary||'').trim().split('\n')[0] || (v.kind==='C' ? [v.client,v.course].filter(Boolean).join(' · ') : '');
-  const st = v.status!=='사용' && !isTemp(v.code) ? ` <span class="pill ${v.status==='삭제'?'bad':'warn'}"${v.remark?` title="${esc(v.remark)}"`:''}>${esc(v.status)}</span>`:'';
+  const st = !isTemp(v.code) ? statusPill(v.status, v.remark) : '';
   const pv = v.kind==='H' ? (v.related||[]).filter(c=>/^P\d{3}/.test(c)) : [];
   const pb = pv.map(c=>`<span class="code P" title="같은 내용의 성과백신 영상">${esc(c)}</span>`).join('');
   return `<div class="row" role="listitem" tabindex="0" data-id="${esc(v.id)}">
     <span class="codes">${codeBadge(v.code, v.kind)}${pb}</span>
     <span class="t"><b>${esc(v.title)}${st}</b><span>${esc(sub)}</span></span>
-    <span class="hide-s area-cell">${esc(v.area||'—')}</span>
+    <span class="hide-s area-cell">${areaTag(v.area)}</span>
     <span class="hide-s mod-cell" title="${esc(videoModules(v).join(', '))}">${esc(videoModules(v).join(', ')||'—')}</span>
     <span class="mono hide-s">${esc(v.instructor||'—')}</span>
     <span class="mono">${esc(fmtDur(v.duration)||'—')}</span>
@@ -1283,11 +1328,11 @@ function viewModules(){
   $('#app').innerHTML = `<h1>모듈별 보기</h1><p class="sub">표준 영상 모듈 리스트 V.4 기준 ${S.modules.length}개 강의. 강의를 고르면 편성 순서대로 영상을 보여 줍니다.</p>
   <section class="card mchart">
     <div class="mchart-h"><h2>영역 · 모듈별 영상 수</h2><span class="hint">사용 중 영상 기준 · 막대를 누르면 그 모듈로 이동</span><button type="button" class="ghost" id="mchartT" aria-expanded="${S.mchart}">${S.mchart?'도표 접기':'도표 펼치기'}</button></div>
-    ${S.mchart?`<div class="mchart-g">${chart.map(g=>`<div class="mchart-c"><div class="mchart-a"><b>${esc(g.label)}</b><span>${g.rows.reduce((s,r)=>s+r.n,0)}편 · 모듈 ${g.rows.length}개</span></div>
+    ${S.mchart?`<div class="mchart-g">${chart.map(g=>`<div class="mchart-c" style="${areaVar(g.a)}"><div class="mchart-a"><b><i></i>${esc(g.label)}</b><span>${g.rows.reduce((s,r)=>s+r.n,0)}편 · 모듈 ${g.rows.length}개</span></div>
       ${g.rows.map(r=>`<button type="button" class="mbar${r.m.id===S.mod?' on':''}" data-mb="${esc(r.m.id)}" data-ar="${esc(g.a)}" title="${esc(g.label)} · ${esc(r.m.name)}: ${r.n}편"><span class="mbar-l">${esc(r.m.name)}</span><span class="mbar-t"><i style="width:${(r.n/cMax*100).toFixed(1)}%"></i></span><span class="mbar-v">${r.n}</span></button>`).join('')}</div>`).join('')}</div>`:''}
   </section>
   <div class="mgrid">
-    <div class="mlist" role="tree">${groups.map(g=>{ const open=S.mopen.has(g.a); return `<button class="marea-h" aria-expanded="${open}" data-ma="${esc(g.a)}"><span><i class="tw">${open?'▾':'▸'}</i>${esc(g.label)}</span><span class="n">${areaN(g.a)}편</span></button>${open? g.mods.map(m=>`<button class="msub" aria-pressed="${m.id===S.mod}" data-m="${esc(m.id)}"><span>${esc(m.name)}</span><span class="n">${modN(m)}</span></button>`).join('') : ''}`; }).join('')}</div>
+    <div class="mlist" role="tree">${groups.map(g=>{ const open=S.mopen.has(g.a); return `<button class="marea-h" aria-expanded="${open}" data-ma="${esc(g.a)}" style="${areaVar(g.a)}"><span><i class="tw">${open?'▾':'▸'}</i><span class="dot"></span>${esc(g.label)}</span><span class="n">${areaN(g.a)}편</span></button>${open? g.mods.map(m=>`<button class="msub" aria-pressed="${m.id===S.mod}" data-m="${esc(m.id)}"><span>${esc(m.name)}</span><span class="n">${modN(m)}</span></button>`).join('') : ''}`; }).join('')}</div>
     <div style="min-width:0;display:flex;flex-direction:column;gap:10px">
       <div class="resultbar"><h2>${esc(modName(S.mod))}</h2><span class="mono">${cur.length}편 · 총 ${fmtDur(String(Math.floor(total/60))+':'+String(total%60))||'0:00'}</span></div>
       <div class="steps">${cur.map((l,i)=>{ const v=byCode[l.code];
@@ -1762,25 +1807,31 @@ function renderSheet(){
     <div class="summary"><h2>내용 요약${v.summaryPrev&&S.canWrite?` <button type="button" class="ghost undo" id="undoSum" title="스크립트로 다시 쓰기 전 요약으로 되돌립니다">이전 요약으로 되돌리기</button>`:''}</h2>${summaryBlock(v)}</div>
     <div class="actions">${v.link?`<a class="btn primary" style="background:var(--accent);color:var(--accent-ink);border-color:var(--accent)" href="${esc(v.link)}" target="_blank" rel="noopener">비메오에서 재생 ↗</a><button id="cp">링크 복사</button>`:(v.status==='제작 중'?'<span class="pill warn">제작 중 · 편집이 끝나면 수정에서 링크와 일련번호를 넣어 주세요</span>':'<span class="pill bad">비메오 링크 없음</span>')}
       ${S.canWrite?'<button id="edit">수정</button>':''}${S.canWrite?'<span id="delWrap" style="margin-left:auto"><button id="del" class="ghost" style="color:var(--bad)">완전 삭제</button></span>':''}</div>
-    <dl class="meta">
+    <div class="metagrps">
+    <section class="metagrp"><h3>기본 정보</h3><dl class="meta">
       <dt>구분</dt><dd>${esc(v.kind)} · ${esc(KIND[v.kind]||'')}</dd>
       <dt>강사</dt><dd class="mono">${esc(v.instructor||'—')}${(()=>{const i=S.instructors.find(i=>i.id===v.instructor);return i&&i.name?' · '+esc(i.name):'';})()}</dd>
       <dt>길이</dt><dd class="mono">${esc(fmtDur(v.duration)||'—')}</dd>
       <dt>${v.kind==='C'?'납품일자':'제작일자'}</dt><dd class="mono">${esc(v.date||'—')}</dd>
-      <dt>상태</dt><dd>${v.status==='사용'?'사용':`<span class="pill ${v.status==='삭제'?'bad':'warn'}">${esc(v.status)}</span>`}</dd>
+      <dt>상태</dt><dd>${statusPill(v.status).replace('class="st ','style="margin-left:0" class="st ')}</dd>
       ${v.remark?`<dt>비고</dt><dd class="pre" style="margin:0">${esc(v.remark)}</dd>`:''}
       ${v.kind==='C'?`<dt>고객사</dt><dd>${esc(v.client||'—')}</dd><dt>과정명</dt><dd>${esc(v.course||'—')}</dd>`:''}
-      <dt>영역</dt><dd>${esc(v.area||'—')}</dd>
+    </dl></section>
+    <section class="metagrp"><h3>분류</h3><dl class="meta">
+      <dt>영역</dt><dd>${areaTag(v.area)}</dd>
       <dt>모듈</dt><dd>${mods.length? mods.map(esc).join(', ') : '—'}</dd>
+      ${v.category?`<dt>분류</dt><dd>${esc(v.category)}</dd>`:''}
       ${v.target?`<dt>추천 대상</dt><dd>${esc(v.target)}</dd>`:''}
       ${v.pitch?`<dt>카달로그 요약</dt><dd>${esc(v.pitch)}</dd>`:''}
-      ${v.category?`<dt>분류</dt><dd>${esc(v.category)}</dd>`:''}
       ${rel.length?`<dt>연결 영상</dt><dd class="pills">${rel.map(x=>x.id?`<button class="code ${esc(x.kind)}" style="border:0" data-jump="${esc(x.id)}">${esc(x.code)}</button>`:`<span class="code">${esc(x.code)}</span>`).join('')}</dd>`:''}
       ${others.length?`<dt>같은 번호</dt><dd class="pills">${others.map(x=>`<button class="pill" data-jump="${esc(x.id)}">${esc(x.date||'')} · ${esc(x.status)}</button>`).join('')}</dd>`:''}
+    </dl></section>
+    <section class="metagrp"><h3>관리 정보</h3><dl class="meta">
       <dt>리뷰노트</dt><dd>${v.review?'있음':'—'}</dd>
       <dt>Tool</dt><dd>${v.tool?'O':'X'}</dd>
       ${v.maker?`<dt>제작</dt><dd>${esc(v.maker)}</dd>`:''}
-    </dl>
+    </dl></section>
+    </div>
     ${v.detail?`<div><span class="label">영상 내용</span><p class="pre">${esc(v.detail)}</p></div>`:''}
     ${scriptSlot('d', v.script, v.scriptName, S.canWrite)}
 `;
