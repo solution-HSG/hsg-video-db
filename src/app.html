@@ -406,15 +406,6 @@ label.btn.thumb-both,.form label.btn.thumb-both{display:inline-flex;flex-directi
 .area-tag{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .area-tag i{width:8px;height:8px;border-radius:2px;background:var(--ac,var(--muted));flex:none}
 .area-none{color:var(--muted);opacity:.6}
-.st{font-size:11.5px;padding:1px 7px;border-radius:999px;display:inline-block;white-space:nowrap;font-weight:500;vertical-align:1px;margin-left:4px}
-.st-use{background:var(--p-soft);color:var(--good)}
-.row .t span.st{display:inline-block;overflow:visible;font-size:11px;line-height:1.5;padding:0 7px}
-.row .t span.st-use{color:var(--good)}
-.row .t span.st-wip{color:var(--warn)}
-.row .t span.st-del{color:var(--bad)}
-.st-wip{background:var(--warn-soft);color:var(--warn)}
-.st-off{background:var(--sunk);color:var(--muted);border:1px solid var(--line)}
-.st-del{background:var(--bad-soft);color:var(--bad)}
 .dbsum{display:flex;align-items:center;gap:8px 18px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;margin-bottom:12px}
 .dbsum-t{display:flex;align-items:baseline;gap:8px;white-space:nowrap}
 .dbsum-t b{font-size:20px;font-weight:700}
@@ -426,9 +417,12 @@ label.btn.thumb-both,.form label.btn.thumb-both{display:inline-flex;flex-directi
 .dbsum-a button em{font-style:normal;color:var(--muted);font-weight:600}
 .dbsum-a button:hover{border-color:var(--ac,var(--accent))}
 .dbsum-a button[aria-pressed="true"]{border-color:var(--ac,var(--accent));box-shadow:inset 0 0 0 1px var(--ac,var(--accent))}
-.metagrps{display:flex;flex-direction:column;gap:10px}
-.metagrp{border:1px solid var(--line);border-radius:var(--r);padding:10px 14px 12px}
-.metagrp h3{margin:0 0 8px;font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.02em}
+.mt{display:grid;grid-template-columns:92px minmax(0,1fr) 92px minmax(0,1fr);margin:0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;font-size:13.5px}
+.mt dt,.mt dd{margin:0;padding:8px 12px;border-bottom:1px solid var(--line);min-width:0;overflow-wrap:anywhere}
+.mt dt{background:var(--sunk);color:var(--muted);font-weight:500;font-size:12.5px}
+.mt dd.w{grid-column:span 3}
+.mt .end{border-bottom:0}
+@media (max-width:560px){ .mt{grid-template-columns:84px minmax(0,1fr)} .mt dd.w{grid-column:auto} }
 .mchart-a b{display:inline-flex;align-items:center;gap:6px}
 .mchart-a b i,.marea-h .dot{width:8px;height:8px;border-radius:2px;background:var(--ac,var(--muted));display:inline-block;margin-right:6px}
 .mchart-c .mbar-t i{background:var(--ac,var(--accent))}
@@ -538,8 +532,6 @@ function filtered(){
 const AREAS = ['리더십','조직관리','업무관리','자기관리'];
 const areaVar = a => { const i=AREAS.indexOf(a); return i<0 ? '' : `--ac:var(--a${i+1})`; };
 const areaTag = a => a ? `<span class="area-tag" style="${areaVar(a)}"><i></i>${esc(a)}</span>` : '<span class="area-none">—</span>';
-const ST_CLS = {'사용':'st-use','제작 중':'st-wip','미사용':'st-off','삭제':'st-del','리뉴얼로 대체됨':'st-off'};
-const statusPill = (st, remark) => st ? `<span class="st ${ST_CLS[st]||'st-off'}"${remark?` title="${esc(remark)}"`:''}>${esc(st)}</span>` : '';
 // 모듈에 속한 영상들이 가장 많이 쓰는 영역 (새 영상 등록 시 기본값)
 function modArea(mods){
   const n={}; for (const m of mods||[]) for (const l of S.links.filter(l=>l.module===m)) for (const v of S.videos.filter(v=>v.code===l.code&&v.area)) n[v.area]=(n[v.area]||0)+1;
@@ -650,13 +642,40 @@ function sumHtml(lines){
   while(out.length && out[out.length-1]==='<div class="sl-gap"></div>') out.pop();
   return `<div class="sumbody">${out.join('')}</div>`;
 }
+function metaTable(v, mods, rel, others){
+  const inst = esc(v.instructor||'—') + (()=>{const i=S.instructors.find(i=>i.id===v.instructor);return i&&i.name?' · '+esc(i.name):'';})();
+  const st = v.status==='사용' ? '사용' : `<span class="pill ${v.status==='삭제'?'bad':'warn'}">${esc(v.status)}</span>`;
+  // [이름, 값, 넓게]
+  const items = [
+    ['구분', `${esc(v.kind)} · ${esc(KIND[v.kind]||'')}`], ['상태', st],
+    ['강사', inst], ['길이', esc(fmtDur(v.duration)||'—')],
+    [v.kind==='C'?'납품일자':'제작일자', esc(v.date||'—')], ['영역', areaTag(v.area)],
+    ['리뷰노트', v.review?'있음':'—'], ['Tool', v.tool?'O':'X'],
+    v.maker ? ['제작', esc(v.maker)] : null,
+    v.kind==='C' ? ['고객사', esc(v.client||'—')] : null,
+    v.kind==='C' ? ['과정명', esc(v.course||'—'), 1] : null,
+    ['모듈', mods.length? mods.map(esc).join(', ') : '—', 1],
+    v.category ? ['분류', esc(v.category), 1] : null,
+    v.target ? ['추천 대상', esc(v.target), 1] : null,
+    v.pitch ? ['카달로그 요약', esc(v.pitch), 1] : null,
+    rel.length ? ['연결 영상', `<span class="pills">${rel.map(x=>x.id?`<button class="code ${esc(x.kind)}" style="border:0" data-jump="${esc(x.id)}">${esc(x.code)}</button>`:`<span class="code">${esc(x.code)}</span>`).join('')}</span>`, 1] : null,
+    others.length ? ['같은 번호', `<span class="pills">${others.map(x=>`<button class="pill" data-jump="${esc(x.id)}">${esc(x.date||'')} · ${esc(x.status)}</button>`).join('')}</span>`, 1] : null,
+    v.remark ? ['비고', `<span class="pre">${esc(v.remark)}</span>`, 1] : null,
+  ].filter(Boolean);
+  // 짧은 항목은 한 줄에 둘씩: 짝이 안 맞으면 마지막 짧은 항목을 넓게
+  const shorts = items.filter(x=>!x[2]), longs = items.filter(x=>x[2]);
+  if (shorts.length % 2) shorts[shorts.length-1] = [...shorts[shorts.length-1].slice(0,2), 1];
+  const all = [...shorts, ...longs];
+  return `<dl class="mt">${all.map((x,i)=>{ const last = i===all.length-1 || (!x[2] && i===all.length-2 && !all[all.length-1][2]); const e = last?' end':'';
+    return `<dt class="${e.trim()}">${x[0]}</dt><dd class="${(x[2]?'w':'')+e}">${x[1]}</dd>`; }).join('')}</dl>`;
+}
 function summaryBlock(v){
   const lines=String(v.summary||'').replace(/\r/g,'').split('\n');
   return lines.some(l=>l.trim()) ? sumHtml(lines) : '<p>아직 없습니다</p>';
 }
 function rowHtml(v){
   const sub = (v.summary||'').trim().split('\n')[0] || (v.kind==='C' ? [v.client,v.course].filter(Boolean).join(' · ') : '');
-  const st = !isTemp(v.code) ? statusPill(v.status, v.remark) : '';
+  const st = v.status!=='사용' && !isTemp(v.code) ? ` <span class="pill ${v.status==='삭제'?'bad':'warn'}"${v.remark?` title="${esc(v.remark)}"`:''}>${esc(v.status)}</span>`:'';
   const pv = v.kind==='H' ? (v.related||[]).filter(c=>/^P\d{3}/.test(c)) : [];
   const pb = pv.map(c=>`<span class="code P" title="같은 내용의 성과백신 영상">${esc(c)}</span>`).join('');
   return `<div class="row" role="listitem" tabindex="0" data-id="${esc(v.id)}">
@@ -1557,31 +1576,7 @@ function renderSheet(){
     <div class="summary"><h2>내용 요약${v.summaryPrev&&S.canWrite?` <button type="button" class="ghost undo" id="undoSum" title="스크립트로 다시 쓰기 전 요약으로 되돌립니다">이전 요약으로 되돌리기</button>`:''}</h2>${summaryBlock(v)}</div>
     <div class="actions">${v.link?`<a class="btn primary" style="background:var(--accent);color:var(--accent-ink);border-color:var(--accent)" href="${esc(v.link)}" target="_blank" rel="noopener">비메오에서 재생 ↗</a><button id="cp">링크 복사</button>`:(v.status==='제작 중'?'<span class="pill warn">제작 중 · 편집이 끝나면 수정에서 링크와 일련번호를 넣어 주세요</span>':'<span class="pill bad">비메오 링크 없음</span>')}
       ${S.canWrite?'<button id="edit">수정</button>':''}${S.canWrite?'<span id="delWrap" style="margin-left:auto"><button id="del" class="ghost" style="color:var(--bad)">완전 삭제</button></span>':''}</div>
-    <div class="metagrps">
-    <section class="metagrp"><h3>기본 정보</h3><dl class="meta">
-      <dt>구분</dt><dd>${esc(v.kind)} · ${esc(KIND[v.kind]||'')}</dd>
-      <dt>강사</dt><dd class="mono">${esc(v.instructor||'—')}${(()=>{const i=S.instructors.find(i=>i.id===v.instructor);return i&&i.name?' · '+esc(i.name):'';})()}</dd>
-      <dt>길이</dt><dd class="mono">${esc(fmtDur(v.duration)||'—')}</dd>
-      <dt>${v.kind==='C'?'납품일자':'제작일자'}</dt><dd class="mono">${esc(v.date||'—')}</dd>
-      <dt>상태</dt><dd>${statusPill(v.status).replace('class="st ','style="margin-left:0" class="st ')}</dd>
-      ${v.remark?`<dt>비고</dt><dd class="pre" style="margin:0">${esc(v.remark)}</dd>`:''}
-      ${v.kind==='C'?`<dt>고객사</dt><dd>${esc(v.client||'—')}</dd><dt>과정명</dt><dd>${esc(v.course||'—')}</dd>`:''}
-    </dl></section>
-    <section class="metagrp"><h3>분류</h3><dl class="meta">
-      <dt>영역</dt><dd>${areaTag(v.area)}</dd>
-      <dt>모듈</dt><dd>${mods.length? mods.map(esc).join(', ') : '—'}</dd>
-      ${v.category?`<dt>분류</dt><dd>${esc(v.category)}</dd>`:''}
-      ${v.target?`<dt>추천 대상</dt><dd>${esc(v.target)}</dd>`:''}
-      ${v.pitch?`<dt>카달로그 요약</dt><dd>${esc(v.pitch)}</dd>`:''}
-      ${rel.length?`<dt>연결 영상</dt><dd class="pills">${rel.map(x=>x.id?`<button class="code ${esc(x.kind)}" style="border:0" data-jump="${esc(x.id)}">${esc(x.code)}</button>`:`<span class="code">${esc(x.code)}</span>`).join('')}</dd>`:''}
-      ${others.length?`<dt>같은 번호</dt><dd class="pills">${others.map(x=>`<button class="pill" data-jump="${esc(x.id)}">${esc(x.date||'')} · ${esc(x.status)}</button>`).join('')}</dd>`:''}
-    </dl></section>
-    <section class="metagrp"><h3>관리 정보</h3><dl class="meta">
-      <dt>리뷰노트</dt><dd>${v.review?'있음':'—'}</dd>
-      <dt>Tool</dt><dd>${v.tool?'O':'X'}</dd>
-      ${v.maker?`<dt>제작</dt><dd>${esc(v.maker)}</dd>`:''}
-    </dl></section>
-    </div>
+    ${metaTable(v, mods, rel, others)}
     ${v.detail?`<div><span class="label">영상 내용</span><p class="pre">${esc(v.detail)}</p></div>`:''}
     ${scriptSlot('d', v.script, v.scriptName, S.canWrite)}
 `;
