@@ -112,11 +112,6 @@ dl.meta dd{margin:0;min-width:0;overflow-wrap:anywhere}
 .summary h2{font-size:16px;font-weight:700;color:var(--accent);margin:0 0 6px}
 .summary p{margin:0}
 .summary p.pre::first-line{font-weight:600}
-.keymsg{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin:2px 0 12px}
-.keymsg svg{flex:none;width:20px;height:20px;color:var(--warn);margin-top:1px}
-.keymsg b{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:1px}
-.keymsg p{margin:0;font-weight:600;line-height:1.55}
-.keymsg p.km-empty{font-weight:400;color:var(--muted)}
 .sumbody{display:flex;flex-direction:column;gap:3px;line-height:1.6;overflow-wrap:anywhere}
 .sumbody .sl-head{font-weight:700}
 .sumbody .sl-gap{height:7px}
@@ -546,14 +541,6 @@ function viewSearch(){
 }
 /* ---------- 내용 요약 표시: 글머리 기호(번호·〮·•·-·*)를 네모 아이콘으로 통일 (저장된 글은 그대로) ---------- */
 const SUM_MARK = /^\s*(〮|•|·|\*|-(?!\d)|–|▪|■|□|\d{1,2}[.)](?!\d)|[①-⑳])\s*/;
-const KM_LINE = /^\s*핵심\s*메시지\s*[:：]\s*/;
-function sumParts(v){
-  const lines=String(v.summary||'').replace(/\r/g,'').split('\n');
-  let km=String(v.keymsg||'').trim();
-  const i=lines.findIndex(l=>KM_LINE.test(l));
-  if (i>=0){ if(!km) km=lines[i].replace(KM_LINE,'').trim(); lines.splice(i,1); }
-  return {km, lines};
-}
 function sumHtml(lines){
   lines=lines.slice(); while(lines.length && !lines[lines.length-1].trim()) lines.pop();
   const kindOf=m=>/^\d|^[①-⑳]/.test(m)?'n':(m==='-'||m==='–')?'h':'d';
@@ -574,12 +561,9 @@ function sumHtml(lines){
   while(out.length && out[out.length-1]==='<div class="sl-gap"></div>') out.pop();
   return `<div class="sumbody${nested?' tree':''}">${out.join('')}</div>`;
 }
-const BULB='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.1 2.2h5c0-.9.4-1.6 1.1-2.2A6 6 0 0 0 12 3z"/></svg>';
 function summaryBlock(v){
-  const {km, lines}=sumParts(v);
-  const kmBox = (km || S.canWrite) ? `<div class="keymsg">${BULB}<div><b>핵심 메시지</b><p${km?'':' class="km-empty"'}>${km?esc(km):'아직 입력되지 않았습니다 · 수정에서 넣을 수 있습니다'}</p></div></div>` : '';
-  const body = lines.some(l=>l.trim()) ? sumHtml(lines) : '<p>아직 없습니다</p>';
-  return kmBox + body;
+  const lines=String(v.summary||'').replace(/\r/g,'').split('\n');
+  return lines.some(l=>l.trim()) ? sumHtml(lines) : '<p>아직 없습니다</p>';
 }
 function rowHtml(v){
   const sub = (v.summary||'').trim().split('\n')[0] || (v.kind==='C' ? [v.client,v.course].filter(Boolean).join(' · ') : '');
@@ -1088,7 +1072,6 @@ function viewAdd(){
       <label><span class="label">길이 (분:초)</span><input id="aDur" placeholder="06:24" value="${esc(draft.duration)}" inputmode="numeric"></label>
       <label><span class="label">제작일자</span><input id="aDate" type="date" value="${esc(draft.date)}"></label>
       ${kindNow==='C'?`<label><span class="label">고객사</span><input id="aClient" value="${esc(draft.client)}"></label><label class="full"><span class="label">과정명</span><input id="aCourse" value="${esc(draft.course)}"></label>`:'<span></span>'}
-      <label class="full"><span class="label">핵심 메시지 <span class="hint">내용 요약 맨 위 전구 칸에 들어갑니다</span></span><input id="aKey" value="${esc(draft.keymsg)}" placeholder="이 영상이 전하는 핵심을 한 문장으로"></label>
       <div class="full">${keymsgBlock('a', draft.summary)}</div>
       <div class="full"><span class="label">모듈</span>${moduleChips('a', draft.modules)}</div>
       <div class="full"><span class="label">스크립트 <span class="hint">영상 스크립트 파일 · 위 내용 요약에서 올린 스크립트도 여기에 저장됩니다</span></span><div id="aScriptSlot">${scriptSlot('a', draft.script, draft.scriptName, true)}</div></div>
@@ -1112,7 +1095,6 @@ function viewAdd(){
   keep('aDur','duration'); keep('aDate','date'); keep('aClient','client'); keep('aCourse','course');
   $('#aInst').onchange=e=>draft.instructor=e.target.value;
   $('#aArea').onchange=e=>draft.area=e.target.value;
-  $('#aKey').oninput=e=>draft.keymsg=e.target.value;
   for (const [id,k] of [['aLink','link'],['aTitle','vtitle']]) $('#'+id)?.addEventListener('change',e=>{ draft[k]=e.target.value.trim(); render(); });
   $('#aProd').onchange=e=>{ draft.prod=e.target.checked; render(); };
   $('#aPTitle')?.addEventListener('input',e=>{ draft.ptitle=e.target.value; const b=$('#addForm [type=submit]'); if(b) b.disabled=!(S.canWrite&&draft.ptitle.trim()); });
@@ -1140,7 +1122,7 @@ function viewAdd(){
       const title=draft.ptitle.trim(); if(!title) return;
       const tcode='T-'+Date.now().toString(36);
       const doc = {code:tcode, kind:draft.pkind, title, instructor:draft.instructor, area:draft.area||modArea(draft.modules), link:'', duration:fmtDur(draft.duration)||draft.duration, date:draft.date,
-        summary:draft.summary.trim(), keymsg:(draft.keymsg||'').trim(), detail:'', category:'', review:false, maker:'', note:'', related:[], client:draft.pkind==='C'?draft.client:'', course:draft.pkind==='C'?draft.course:'', status:'제작 중', script:draft.script, scriptName:draft.scriptName, sheetModule: draft.modules.map(modName).join(', '), createdAt:new Date().toISOString()};
+        summary:draft.summary.trim(), detail:'', category:'', review:false, maker:'', note:'', related:[], client:draft.pkind==='C'?draft.client:'', course:draft.pkind==='C'?draft.course:'', status:'제작 중', script:draft.script, scriptName:draft.scriptName, sheetModule: draft.modules.map(modName).join(', '), createdAt:new Date().toISOString()};
       try{
         await S.db.doc('videos/'+tcode).set(doc);
         for (const m of draft.modules) await addLink(m, tcode, title);
@@ -1156,7 +1138,7 @@ function viewAdd(){
     const id = same? `${pp.code}~${same+1}` : pp.code;
     const doc = {code:pp.code, kind:pp.code[0], title:pp.title, instructor:draft.instructor, area:draft.area||modArea(draft.modules), link:'https://player.vimeo.com/video/'+linkId(draft.link),
       duration:fmtDur(draft.duration)||draft.duration, date:draft.date, 
-      summary:draft.summary.trim(), keymsg:(draft.keymsg||'').trim(), detail:'', category:'', review:false, maker:'', note:'', related:[], client:draft.client, course:draft.course, status:'사용', script:draft.script, scriptName:draft.scriptName, sheetModule: draft.modules.map(modName).join(', '), createdAt:new Date().toISOString()};
+      summary:draft.summary.trim(), detail:'', category:'', review:false, maker:'', note:'', related:[], client:draft.client, course:draft.course, status:'사용', script:draft.script, scriptName:draft.scriptName, sheetModule: draft.modules.map(modName).join(', '), createdAt:new Date().toISOString()};
     try{
       await S.db.doc('videos/'+id).set(doc);
       for (const m of draft.modules) await addLink(m, pp.code, pp.title);
@@ -1546,7 +1528,7 @@ async function loadHistory(id){
 }
 async function logHistory(){}
 
-const FIELDS = {area:'영역',keymsg:'핵심 메시지',script:'스크립트',scriptName:'스크립트',target:'추천 대상',pitch:'카달로그 요약',sheetModule:'모듈',tool:'Tool',title:'제목',instructor:'강사',link:'링크',duration:'길이',date:'제작일자',summary:'내용 요약',detail:'영상 내용',status:'상태',related:'연결 영상',client:'고객사',course:'과정명',remark:'비고',review:'리뷰노트'};
+const FIELDS = {area:'영역',script:'스크립트',scriptName:'스크립트',target:'추천 대상',pitch:'카달로그 요약',sheetModule:'모듈',tool:'Tool',title:'제목',instructor:'강사',link:'링크',duration:'길이',date:'제작일자',summary:'내용 요약',detail:'영상 내용',status:'상태',related:'연결 영상',client:'고객사',course:'과정명',remark:'비고',review:'리뷰노트'};
 let editMods=[];
 function editHtml(v){
   editMods = S.links.filter(l=>l.code===v.code).map(l=>l.module).filter((x,i,a)=>a.indexOf(x)===i);
@@ -1561,7 +1543,6 @@ function editHtml(v){
     <label><span class="label">길이</span><input id="eDur" value="${esc(v.duration)}"></label>
     <label><span class="label">${v.kind==='C'?'납품일자':'제작일자'}</span><input id="eDate" value="${esc(v.date)}" placeholder="2026-10-19"></label>
     ${v.kind==='C'?`<label><span class="label">고객사</span><input id="eClient" value="${esc(v.client)}"></label><label><span class="label">과정명</span><input id="eCourse" value="${esc(v.course)}"></label>`:''}
-    <label class="full"><span class="label">핵심 메시지 <span class="hint">내용 요약 맨 위 전구 칸에 들어갑니다</span></span><input id="eKey" value="${esc(v.keymsg||'')}" placeholder="이 영상이 전하는 핵심을 한 문장으로"></label>
     <div class="full">${keymsgBlock('e', v.summary)}</div>
     <label class="full"><span class="label">추천 대상 <span class="hint">카달로그에 들어갑니다</span></span><input id="eTarget" value="${esc(v.target||'')}" placeholder="예: 평가 면담의 납득성을 높이고자 하는 리더"></label>
     <label class="full"><span class="label">카달로그 요약 <span class="hint">2문장 · 카달로그 영상 상세에 들어갑니다</span></span><textarea id="ePitch" rows="3" placeholder="필요나 문제 한 문장 + '본 영상에서는 …' 한 문장">${esc(v.pitch||'')}</textarea></label>
@@ -1583,7 +1564,7 @@ function bindEdit(v){
   $('#editForm').onsubmit=async e=>{ e.preventDefault();
     const nv = {title:$('#eTitle').value.trim(), instructor:$('#eInst').value, area:$('#eArea').value, status:$('#eStatus').value, link:$('#eLink').value.trim(),
       duration:fmtDur($('#eDur').value.trim())||$('#eDur').value.trim(), date:$('#eDate').value.trim(),
-      summary:$('#eKm').value, keymsg:$('#eKey').value.trim(), target:$('#eTarget').value.trim(), pitch:$('#ePitch').value.trim(), detail:v.detail||'', remark:$('#eNote').value.trim(), review:$('#eReview').checked, tool:$('#eTool').checked, sheetModule:editMods.length? editMods.map(modName).join(', ') : (v.sheetModule||''),
+      summary:$('#eKm').value, target:$('#eTarget').value.trim(), pitch:$('#ePitch').value.trim(), detail:v.detail||'', remark:$('#eNote').value.trim(), review:$('#eReview').checked, tool:$('#eTool').checked, sheetModule:editMods.length? editMods.map(modName).join(', ') : (v.sheetModule||''),
       related:$('#eRel').value.split(/[,\s]+/).map(s=>s.trim().toUpperCase()).filter(Boolean)};
     if (pendScript){ nv.script=pendScript.text; nv.scriptName=pendScript.name; }
     if (v.kind==='C'){ nv.client=$('#eClient').value.trim(); nv.course=$('#eCourse').value.trim(); }
