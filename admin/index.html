@@ -1683,7 +1683,7 @@ function thumbBlock(v){
   const have=THUMB_FIELDS.filter(f=>v[f]);
   if (!can) return have.length? `<div class="thumb-pair${have.length>1?' two':''}">${have.map((f,i)=>`<div class="thumb-box"><img src="${HSG.thumbUrl(v[f])}" alt="${esc(v.title)} 썸네일 ${i+1}"></div>`).join('')}</div>` : '';
   return `<div class="thumb-pair two">${THUMB_FIELDS.map((f,i)=> v[f]
-    ? `<div class="thumb-box"><span class="thumb-no">${i+1}</span><img src="${HSG.thumbUrl(v[f])}" alt="${esc(v.title)} 썸네일 ${i+1}"><div class="thumb-act"><label class="btn">바꾸기<input type="file" data-thf="${f}" accept="image/*" hidden></label><button type="button" data-thdel="${f}">빼기</button></div></div>`
+    ? `<div class="thumb-box"><span class="thumb-no">${i+1}</span><img src="${HSG.thumbUrl(v[f])}" alt="${esc(v.title)} 썸네일 ${i+1}"><div class="thumb-act"><label class="btn">바꾸기<input type="file" data-thf="${f}" accept="image/*" hidden></label></div></div>`
     : `<label class="thumb-empty" data-thdrop="${f}"><input type="file" data-thf="${f}" accept="image/*" multiple hidden>${IMG_ICON}<b>썸네일 ${i+1} 올리기</b><span>${i===0?'강사 얼굴이 보이는 장면':'두 번째 장면'} · 두 장을 한꺼번에 골라도 됩니다</span></label>`).join('')}</div>
     <label class="btn thumb-both"><input type="file" id="thBoth" accept="image/*" multiple hidden>${IMG_ICON}<span>썸네일 두 장 한꺼번에 올리기</span></label>`;
 }
@@ -1715,7 +1715,6 @@ function renderSheet(){
     ${r.length?`<div class="pills">${r.map(x=>`<span class="pill warn">${esc(x)}</span>`).join('')}</div>`:''}
     ${S.canWrite&&v.sheetFail&&v.kind==='H'&&!isTemp(v.code)?`<div class="notice" style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:0"><span>구글 시트 반영 실패 · 구글 시트에 이 영상의 최근 저장 내용이 들어가지 않았습니다.</span><button id="toSheet" class="primary">다시 반영</button></div>`:''}
     ${thumbBlock(v)}
-    ${scriptSlot('d', v.script, v.scriptName, S.canWrite)}
     <div class="summary"><h2>내용 요약${v.summaryPrev&&S.canWrite?` <button type="button" class="ghost undo" id="undoSum" title="스크립트로 다시 쓰기 전 요약으로 되돌립니다">이전 요약으로 되돌리기</button>`:''}</h2>${summaryBlock(v)}</div>
     <div class="actions">${v.link?`<a class="btn primary" style="background:var(--accent);color:var(--accent-ink);border-color:var(--accent)" href="${esc(v.link)}" target="_blank" rel="noopener">비메오에서 재생 ↗</a><button id="cp">링크 복사</button>`:(v.status==='제작 중'?'<span class="pill warn">제작 중 · 편집이 끝나면 수정에서 링크와 일련번호를 넣어 주세요</span>':'<span class="pill bad">비메오 링크 없음</span>')}
       ${S.canWrite?'<button id="edit">수정</button>':''}${S.canWrite?'<span id="delWrap" style="margin-left:auto"><button id="del" class="ghost" style="color:var(--bad)">완전 삭제</button></span>':''}</div>
@@ -1739,6 +1738,7 @@ function renderSheet(){
       ${v.maker?`<dt>제작</dt><dd>${esc(v.maker)}</dd>`:''}
     </dl>
     ${v.detail?`<div><span class="label">영상 내용</span><p class="pre">${esc(v.detail)}</p></div>`:''}
+    ${scriptSlot('d', v.script, v.scriptName, S.canWrite)}
 `;
   $('#sheetRoot').innerHTML = `<div class="scrim" id="scrim"></div><aside class="sheet" role="dialog" aria-modal="true" aria-label="${esc(isTemp(v.code)?'제작 중':v.code)} ${esc(v.title)}">
     <div class="sheet-h"><div class="grow">${codeBadge(v.code, v.kind)}<h1 style="margin-top:6px">${esc(v.title)}</h1></div><button class="ghost" id="x" aria-label="닫기">✕</button></div>
