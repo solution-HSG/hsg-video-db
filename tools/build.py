@@ -165,7 +165,41 @@ if 'claude.ai' in s.replace('claude.ai/code', ''):
     for m in re.finditer(r'.{40}claude\.ai.{40}', s):
         print('WARN', m.group(0))
 
+
+# 8) 직원용: 접속할 때마다 비밀번호 확인 (기기·탭 어디에도 저장하지 않음 → 새로고침해도 다시 입력)
+VIEW_GATE = """<style>
+html.locked body>*:not(#gate){visibility:hidden}
+#gate{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;background:var(--bg,#f3f5f8);padding:16px}
+#gate form{width:min(360px,100%);background:var(--surface,#fff);border:1px solid var(--line,#dde3ea);border-radius:10px;padding:26px 24px 22px;box-shadow:0 8px 30px rgba(15,25,40,.08)}
+#gate h1{margin:0 0 4px;font-size:19px}
+#gate p{margin:0 0 16px;color:var(--muted,#5b6977);font-size:13.5px}
+#gate input{width:100%;box-sizing:border-box;font:inherit;font-size:15px;padding:10px 12px;border:1px solid var(--line,#cdd5de);border-radius:8px;background:var(--bg,#fff);color:inherit}
+#gate button{width:100%;text-align:center;justify-content:center;margin-top:10px;font:inherit;font-size:15px;font-weight:600;padding:10px;border:0;border-radius:8px;background:var(--accent,#1f5f8b);color:#fff;cursor:pointer}
+#gate .err{color:var(--bad,#b3362c);font-size:13px;min-height:18px;margin-top:8px}
+</style>
+<script>
+(function(){
+  var H='2bcb43cbc8f6b7ef66331532881143fcbae60a879db3a8fb853f645bb24c2b3c';
+  document.documentElement.classList.add('locked');
+  function hex(b){ return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0');}).join(''); }
+  function show(){
+    var g=document.createElement('div'); g.id='gate';
+    g.innerHTML='<form autocomplete="off"><h1>HSG 영상 DB</h1><p>접속 비밀번호를 입력해 주세요.</p><input type="password" aria-label="접속 비밀번호" placeholder="비밀번호" required><button type="submit">들어가기</button><div class="err" role="alert"></div></form>';
+    document.body.appendChild(g);
+    var f=g.querySelector('form'), i=g.querySelector('input'), er=g.querySelector('.err'); i.focus();
+    f.onsubmit=function(e){ e.preventDefault();
+      crypto.subtle.digest('SHA-256', new TextEncoder().encode(i.value.trim())).then(function(b){
+        if(hex(b)===H){ g.remove(); document.documentElement.classList.remove('locked'); }
+        else { er.textContent='비밀번호가 맞지 않습니다.'; i.select(); }
+      });
+    };
+  }
+  if(document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+})();
+</script>
+"""
+
 for mode, out in (('staff', ROOT / 'index.html'), ('admin', ROOT / 'admin/index.html')):
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(s.replace('%%RUNTIME%%', head_scripts % repr(mode)), encoding='utf-8')
+    out.write_text(s.replace('%%RUNTIME%%', (VIEW_GATE if mode == 'staff' else '') + head_scripts % repr(mode)), encoding='utf-8')
     print('wrote', out.relative_to(ROOT), len(s))
