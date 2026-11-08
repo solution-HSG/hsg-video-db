@@ -100,6 +100,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none}
 .pills{display:flex;gap:4px;flex-wrap:wrap}
 .row .t span.pills{display:flex;overflow:visible;white-space:normal;margin-top:3px}
 .row .t span.pills>span{display:inline-block}
+.row .t span.pill{display:inline-block;width:auto;vertical-align:1px;margin-left:4px}
 .more{display:flex;justify-content:center;padding:12px}
 .empty{padding:40px 16px;text-align:center;color:var(--muted)}
 @media (max-width:720px){
@@ -751,7 +752,7 @@ function linkProblems(){
   return S.links.map(l=>{
     if (!l.code) return {l, why:'번호 없음 (미제작?)'};
     const vs=byCode[l.code]; if(!vs) return {l, why:'없는 번호'};
-    if (!vs.some(v=>v.status==='사용')) return vs.some(v=>v.status==='제작 중')? null : {l, why:'판매하지 않는 영상'};
+    // 미사용·리뉴얼로 대체된 영상은 회사가 쓰지 않기로 정한 것이라 확인 대상이 아님
     return null;
   }).filter(Boolean);
 }
