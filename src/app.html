@@ -469,7 +469,9 @@ function toast(msg){ const r=$('#toastRoot'); r.innerHTML=`<div class="toast" ro
 /* ---------- derived ---------- */
 function modName(id){ return (S.modules.find(m=>m.id===id)||{}).name || id; }
 function videoModules(v){ return S.links.filter(l=>l.code===v.code).map(l=>modName(l.module)); }
-function instSet(){ return new Set(S.instructors.map(i=>i.id)); }
+const NO_INST = '없음';   // 강사 없이 그래픽으로만 만든 영상
+const noInstOpt = cur => opt(NO_INST, '없음 (강사 없이 그래픽 제작)', cur);
+function instSet(){ return new Set([...S.instructors.map(i=>i.id), NO_INST]); }
 function reasonsFor(v, ctx){
   const r=[];
   if (v.status==='제작 중') return r;
@@ -565,7 +567,7 @@ function viewSearch(){
     <label><span class="label">구분</span><select id="fKind">${opt('','전체',S.f.kind)}${opt('P','P 성과백신',S.f.kind)}${opt('H','H 판매용',S.f.kind)}${opt('C','C 기업맞춤',S.f.kind)}</select></label>
     <label><span class="label">영역</span><select id="fArea">${opt('','전체',S.f.area)}${AREAS.map(a=>opt(a,a,S.f.area)).join('')}${opt('-','(미지정)',S.f.area)}</select></label>
     <label><span class="label">모듈</span><select id="fModule">${opt('','전체',S.f.module)}${mods.map(m=>opt(m.id,m.name,S.f.module)).join('')}</select></label>
-    <label><span class="label">강사</span><select id="fInst">${opt('','전체',S.f.inst)}${S.instructors.map(i=>opt(i.id, i.name? `${i.id} · ${i.name}`: i.id, S.f.inst)).join('')}</select></label>
+    <label><span class="label">강사</span><select id="fInst">${opt('','전체',S.f.inst)}${S.instructors.map(i=>opt(i.id, i.name? `${i.id} · ${i.name}`: i.id, S.f.inst)).join('')}${opt(NO_INST,'없음 (그래픽 제작)',S.f.inst)}</select></label>
     <label><span class="label">상태</span><select id="fStatus">${opt('','전체',S.f.status)}${STATUSES.map(s=>opt(s,s,S.f.status)).join('')}</select></label>
   </div>
   <div class="resultbar"><span><b>${res.length}</b>개 영상${S.q||S.f.kind||S.f.area||S.f.module||S.f.inst?' 검색됨':''}</span>
@@ -1184,7 +1186,7 @@ function viewAdd(){
         ${draft.vtitle && !p.code?'<span class="hint" style="color:var(--bad)">번호 형식 오류: 제목 앞에 H209_ 처럼 번호를 붙여 주세요.</span>':''}
         ${dup&&dup.length?`<span class="hint" style="color:var(--warn)">중복 번호: ${esc(p.code)}가 이미 ${dup.length}건 있습니다. 리뉴얼이면 그대로 저장하고, 기존 영상 상태를 바꿔 주세요.</span>`:''}</label>
       <label><span class="label">제목 (자동)</span><input value="${esc(p.title)}" disabled></label>`}
-      <label><span class="label">강사</span><select id="aInst">${opt('','선택',draft.instructor)}${S.instructors.map(i=>opt(i.id,i.name?`${i.id} · ${i.name}`:i.id,draft.instructor)).join('')}</select></label>
+      <label><span class="label">강사</span><select id="aInst">${opt('','선택',draft.instructor)}${S.instructors.map(i=>opt(i.id,i.name?`${i.id} · ${i.name}`:i.id,draft.instructor)).join('')}${noInstOpt(draft.instructor)}</select></label>
       <label><span class="label">영역 <span class="hint">비우면 모듈에 따라 자동</span></span><select id="aArea">${areaOpts(draft.area)}</select></label>
       <label><span class="label">길이 (분:초)</span><input id="aDur" placeholder="06:24" value="${esc(draft.duration)}" inputmode="numeric"></label>
       <label><span class="label">제작일자</span><input id="aDate" type="date" value="${esc(draft.date)}"></label>
@@ -1343,6 +1345,7 @@ function hm(sec){ const h=Math.floor(sec/3600), m=Math.round(sec%3600/60); retur
 function statInstructors(){
   const act=S.videos.filter(v=>v.status==='사용');
   const rows=S.instructors.map(i=>{ const vs=act.filter(v=>v.instructor===i.id); return {label:i.name?`${i.id} · ${i.name}`:i.id, n:vs.length, sub:hm(vs.reduce((s,v)=>s+Math.max(0,secs(v.duration)),0))}; }).sort((a,b)=>b.n-a.n||a.label.localeCompare(b.label));
+  const noI=act.filter(v=>v.instructor===NO_INST); if(noI.length) rows.push({label:'없음 (그래픽 제작)', n:noI.length, sub:hm(noI.reduce((s,v)=>s+Math.max(0,secs(v.duration)),0))});
   const none=act.filter(v=>!v.instructor).length;
   return `<div class="card"><h2>강사별 영상 수</h2><p class="hint" style="margin:0">'사용' 상태 영상 ${act.length}편 기준, 오른쪽은 총 길이입니다.</p>${bars(rows)}${none?`<p class="hint" style="margin:0">강사가 비어 있는 영상 ${none}편은 제외했습니다.</p>`:''}</div>`;
 }
@@ -1635,7 +1638,7 @@ function editHtml(v){
     ${isTemp(v.code)?`<div class="full notice info" style="margin:0">제작 중인 영상입니다. 편집이 끝나면 일련번호와 비메오 링크를 넣고 상태를 '사용'으로 바꿔 저장하세요.${v.kind==='H'?' 저장하면 고객사용 시트에 자동으로 추가됩니다.':''}</div>
     <label class="full"><span class="label">일련번호 (편집이 끝나면 입력)</span><input id="eCode" placeholder="예: H210" style="text-transform:uppercase"></label>`:''}
     <label class="full"><span class="label">제목</span><input id="eTitle" value="${esc(v.title)}"></label>
-    <label><span class="label">강사</span><select id="eInst">${opt('','선택',v.instructor)}${S.instructors.map(i=>opt(i.id,i.name?`${i.id} · ${i.name}`:i.id,v.instructor)).join('')}${v.instructor&&!instSet().has(v.instructor)?opt(v.instructor,v.instructor+' (목록에 없음)',v.instructor):''}</select></label>
+    <label><span class="label">강사</span><select id="eInst">${opt('','선택',v.instructor)}${S.instructors.map(i=>opt(i.id,i.name?`${i.id} · ${i.name}`:i.id,v.instructor)).join('')}${noInstOpt(v.instructor)}${v.instructor&&!instSet().has(v.instructor)?opt(v.instructor,v.instructor+' (목록에 없음)',v.instructor):''}</select></label>
     <label><span class="label">영역</span><select id="eArea">${areaOpts(v.area)}</select></label>
     <label><span class="label">상태</span><select id="eStatus">${STATUSES.map(s=>opt(s,s,v.status)).join('')}</select></label>
     <label class="full"><span class="label">비메오 링크</span><input id="eLink" value="${esc(v.link)}"></label>
