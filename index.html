@@ -721,7 +721,7 @@ function toast(msg){ const r=$('#toastRoot'); r.innerHTML=`<div class="toast" ro
 function modName(id){ return (S.modules.find(m=>m.id===id)||{}).name || id; }
 function videoModules(v){ return S.links.filter(l=>l.code===v.code).map(l=>modName(l.module)); }
 const NO_INST = '없음';   // 강사 없이 그래픽으로만 만든 영상
-const noInstOpt = cur => opt(NO_INST, '없음 (강사 없이 그래픽 제작)', cur);
+const noInstOpt = cur => opt(NO_INST, '없음', cur);
 function instSet(){ return new Set([...S.instructors.map(i=>i.id), NO_INST]); }
 function reasonsFor(v, ctx){
   const r=[];
@@ -850,7 +850,7 @@ function viewSearch(){
     <label><span class="label">구분</span><select id="fKind">${opt('','전체',S.f.kind)}${opt('P','P 성과백신',S.f.kind)}${opt('H','H 판매용',S.f.kind)}${opt('C','C 기업맞춤',S.f.kind)}</select></label>
     <label><span class="label">영역</span><select id="fArea">${opt('','전체',S.f.area)}${AREAS.map(a=>opt(a,a,S.f.area)).join('')}${opt('-','(미지정)',S.f.area)}</select></label>
     <label><span class="label">모듈</span><select id="fModule">${opt('','전체',S.f.module)}${mods.map(m=>opt(m.id,m.name,S.f.module)).join('')}</select></label>
-    <label><span class="label">강사</span><select id="fInst">${opt('','전체',S.f.inst)}${S.instructors.map(i=>opt(i.id, i.name? `${i.id} · ${i.name}`: i.id, S.f.inst)).join('')}${opt(NO_INST,'없음 (그래픽 제작)',S.f.inst)}</select></label>
+    <label><span class="label">강사</span><select id="fInst">${opt('','전체',S.f.inst)}${S.instructors.map(i=>opt(i.id, i.name? `${i.id} · ${i.name}`: i.id, S.f.inst)).join('')}${opt(NO_INST,'없음',S.f.inst)}</select></label>
     <label><span class="label">상태</span><select id="fStatus">${opt('','전체',S.f.status)}${STATUSES.map(s=>opt(s,s,S.f.status)).join('')}</select></label>
   </div>
   <div class="resultbar"><span><b>${res.length}</b>개 영상${S.q||S.f.kind||S.f.area||S.f.module||S.f.inst?' 검색됨':''}</span>
@@ -1628,7 +1628,7 @@ function hm(sec){ const h=Math.floor(sec/3600), m=Math.round(sec%3600/60); retur
 function statInstructors(){
   const act=S.videos.filter(v=>v.status==='사용');
   const rows=S.instructors.map(i=>{ const vs=act.filter(v=>v.instructor===i.id); return {label:i.name?`${i.id} · ${i.name}`:i.id, n:vs.length, sub:hm(vs.reduce((s,v)=>s+Math.max(0,secs(v.duration)),0))}; }).sort((a,b)=>b.n-a.n||a.label.localeCompare(b.label));
-  const noI=act.filter(v=>v.instructor===NO_INST); if(noI.length) rows.push({label:'없음 (그래픽 제작)', n:noI.length, sub:hm(noI.reduce((s,v)=>s+Math.max(0,secs(v.duration)),0))});
+  const noI=act.filter(v=>v.instructor===NO_INST); if(noI.length) rows.push({label:'없음', n:noI.length, sub:hm(noI.reduce((s,v)=>s+Math.max(0,secs(v.duration)),0))});
   const none=act.filter(v=>!v.instructor).length;
   return `<div class="card"><h2>강사별 영상 수</h2><p class="hint" style="margin:0">'사용' 상태 영상 ${act.length}편 기준, 오른쪽은 총 길이입니다.</p>${bars(rows)}${none?`<p class="hint" style="margin:0">강사가 비어 있는 영상 ${none}편은 제외했습니다.</p>`:''}</div>`;
 }
