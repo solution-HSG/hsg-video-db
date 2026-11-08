@@ -458,7 +458,7 @@ const $ = (s, r=document) => r.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const CODE_RE = /^[PHC]\d{3}(-\d+)?$/;
 const KIND = {P:'성과백신', H:'판매용', C:'기업맞춤'};
-const STATUSES = ['사용','제작 중','미사용','삭제','리뉴얼로 대체됨'];
+const STATUSES = ['사용','제작 중','미사용','리뉴얼로 대체됨'];
 const isTemp = c => /^T-/.test(c||'');
 const codeBadge = (code, kind) => isTemp(code) ? '<span class="pill warn">제작 중</span>' : `<span class="code ${esc(kind)}">${esc(code)}</span>`;
 const secs = d => { const p = String(d||'').split(':').map(Number); if (p.some(isNaN) || !d) return -1; return p.reduce((a,b)=>a*60+b,0); };
@@ -500,7 +500,7 @@ function linkProblems(){
   return S.links.map(l=>{
     if (!l.code) return {l, why:'번호 없음 (미제작?)'};
     const vs=byCode[l.code]; if(!vs) return {l, why:'없는 번호'};
-    if (!vs.some(v=>v.status==='사용')) return vs.some(v=>v.status==='제작 중')? null : {l, why:'삭제·대체된 영상'};
+    if (!vs.some(v=>v.status==='사용')) return vs.some(v=>v.status==='제작 중')? null : {l, why:'판매하지 않는 영상'};
     return null;
   }).filter(Boolean);
 }
