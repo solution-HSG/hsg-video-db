@@ -8,11 +8,11 @@ const MODE = window.HSG_MODE === 'admin' ? 'admin' : 'staff';
 const FN = CFG.url + '/functions/v1/api';
 const LS = 'hsg_admin_key';
 const sb = window.supabase.createClient(CFG.url, CFG.key, { auth: { persistSession: false } });
-// 관리자 비밀번호는 기기에 저장하지 않는다 (페이지를 열 때마다 다시 입력)
+// 관리자 비밀번호는 기기(localStorage)에 남기지 않는다
 try { localStorage.removeItem('hsg_admin_key'); } catch {}
-const MEM = {};
-const lsGet = k => MEM[k] || '';
-const lsSet = (k, v) => { if (v) MEM[k] = v; else delete MEM[k]; };
+// 탭(창)을 닫기 전까지만 기억: 새로고침해도 유지, 창을 닫으면 사라짐
+const lsGet = k => { try { return sessionStorage.getItem(k) || ''; } catch { return ''; } };
+const lsSet = (k, v) => { try { v ? sessionStorage.setItem(k, v) : sessionStorage.removeItem(k); } catch {} };
 
 const HSG = window.HSG = {
   mode: MODE,

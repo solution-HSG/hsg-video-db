@@ -126,7 +126,7 @@ function showLogin(){
   const box=document.createElement('div'); box.id='loginBox'; box.className='login-wrap';
   box.innerHTML=`<form class="login card" id="loginForm" autocomplete="off">
     <h2>관리자 로그인</h2>
-    <p class="hint">영상 등록·수정·삭제와 관리 메뉴를 쓰려면 관리자 비밀번호를 넣어 주세요. 페이지를 열 때마다 입력해야 합니다.</p>
+    <p class="hint">영상 등록·수정·삭제와 관리 메뉴를 쓰려면 관리자 비밀번호를 넣어 주세요. 창을 닫으면 다시 입력해야 합니다.</p>
     <input type="password" id="loginPw" placeholder="관리자 비밀번호" aria-label="관리자 비밀번호" autocomplete="current-password" required>
     <div class="login-err" id="loginErr" role="alert"></div>
     <div class="actions"><button type="submit" class="primary">로그인</button></div>
@@ -165,7 +165,7 @@ if 'claude.ai' in s.replace('claude.ai/code', ''):
         print('WARN', m.group(0))
 
 
-# 8) 직원용: 접속할 때마다 비밀번호 확인 (기기·탭 어디에도 저장하지 않음 → 새로고침해도 다시 입력)
+# 8) 직원용: 접속할 때마다 비밀번호 확인 (창을 닫기 전까지만 유지: 새로고침은 그대로, 창을 닫으면 다시 입력)
 VIEW_GATE = """<style>
 html.locked body>*:not(#gate){visibility:hidden}
 #gate{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;background:var(--bg,#f3f5f8);padding:16px}
@@ -178,7 +178,8 @@ html.locked body>*:not(#gate){visibility:hidden}
 </style>
 <script>
 (function(){
-  var H='2bcb43cbc8f6b7ef66331532881143fcbae60a879db3a8fb853f645bb24c2b3c';
+  var H='2bcb43cbc8f6b7ef66331532881143fcbae60a879db3a8fb853f645bb24c2b3c', K='hsg-view-ok';
+  try{ if(sessionStorage.getItem(K)===H) return; }catch(e){}
   document.documentElement.classList.add('locked');
   function hex(b){ return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0');}).join(''); }
   function show(){
@@ -188,7 +189,7 @@ html.locked body>*:not(#gate){visibility:hidden}
     var f=g.querySelector('form'), i=g.querySelector('input'), er=g.querySelector('.err'); i.focus();
     f.onsubmit=function(e){ e.preventDefault();
       crypto.subtle.digest('SHA-256', new TextEncoder().encode(i.value.trim())).then(function(b){
-        if(hex(b)===H){ g.remove(); document.documentElement.classList.remove('locked'); }
+        if(hex(b)===H){ try{ sessionStorage.setItem(K,H); }catch(e){} g.remove(); document.documentElement.classList.remove('locked'); }
         else { er.textContent='비밀번호가 맞지 않습니다.'; i.select(); }
       });
     };
