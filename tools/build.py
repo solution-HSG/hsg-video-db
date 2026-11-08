@@ -126,14 +126,13 @@ function showLogin(){
   const box=document.createElement('div'); box.id='loginBox'; box.className='login-wrap';
   box.innerHTML=`<form class="login card" id="loginForm" autocomplete="off">
     <h2>관리자 로그인</h2>
-    <p class="hint">영상 등록·수정·삭제와 관리 메뉴를 쓰려면 관리자 비밀번호를 넣어 주세요. 이 기기에서는 한 번만 넣으면 됩니다.</p>
+    <p class="hint">영상 등록·수정·삭제와 관리 메뉴를 쓰려면 관리자 비밀번호를 넣어 주세요. 페이지를 열 때마다 입력해야 합니다.</p>
     <input type="password" id="loginPw" placeholder="관리자 비밀번호" aria-label="관리자 비밀번호" autocomplete="current-password" required>
     <div class="login-err" id="loginErr" role="alert"></div>
-    <div class="actions"><button type="submit" class="primary">로그인</button><button type="button" id="loginSkip" class="ghost">보기만 하기</button></div>
+    <div class="actions"><button type="submit" class="primary">로그인</button></div>
   </form>`;
   document.body.appendChild(box);
   $('#loginPw').focus();
-  $('#loginSkip').onclick=()=>box.remove();
   $('#loginForm').onsubmit=async e=>{ e.preventDefault(); const b=e.target.querySelector('[type=submit]'); b.disabled=true; $('#loginErr').textContent='';
     const ok=await HSG.login($('#loginPw').value); b.disabled=false;
     if (ok){ box.remove(); applyAuth(); toast('관리자로 로그인했습니다'); } else { $('#loginErr').textContent='비밀번호가 맞지 않습니다.'; $('#loginPw').select(); } };
@@ -145,7 +144,7 @@ s = rep(s, "function setView(v){ S.view = v;",
 
 AUTH_CSS = '''
 .linkish{background:none;border:0;padding:0;color:var(--accent);font:inherit;cursor:pointer;text-decoration:underline}
-.login-wrap{position:fixed;inset:0;background:rgba(15,20,30,.45);display:grid;place-items:center;z-index:200;padding:16px}
+.login-wrap{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;z-index:200;padding:16px}
 .login{width:min(380px,100%);display:block}
 .login h2{margin:0 0 6px;font-size:18px}
 .login input{width:100%;margin:12px 0 4px}
