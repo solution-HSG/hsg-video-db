@@ -735,6 +735,7 @@ function reasonsFor(v, ctx){
   if (!(v.summary||'').trim()) r.push('내용 요약 없음');
   if (v.kind!=='C' && !ctx.linked.has(v.code) && !(v.kind==='P' && (ctx.pViaH.has(v.code) || v.noModule))) r.push('모듈 미연결');   // noModule: 원본 H 없이 만든 P (모듈 대상 아님)   // P는 연결된 H가 모듈에 있으면 통과
   if (!v.duration || !v.date) r.push('정보 직접 입력');
+  if (v.kind==='H'){ if(!v.thumb && !v.thumb2) r.push('썸네일 없음'); else if(!v.thumb) r.push('썸네일 1 없음'); else if(!v.thumb2) r.push('썸네일 2 없음'); }
   return r;
 }
 function ctx(){
@@ -1422,10 +1423,10 @@ function viewCheck(c){
   const items = S.videos.map(v=>({v, r:reasonsFor(v,c)})).filter(x=>x.r.length);
   const lp = linkProblems();
   // 세부 항목: 모듈 연결 오류 / 강사 누락 / 영상 미제작 (그 밖의 사유는 '기타')
-  const CAT = {'모듈 미연결':'모듈 연결 오류', '강사 누락':'강사 누락'};
+  const CAT = {'모듈 미연결':'모듈 연결 오류', '강사 누락':'강사 누락', '썸네일 없음':'썸네일 누락', '썸네일 1 없음':'썸네일 누락', '썸네일 2 없음':'썸네일 누락'};
   const catOf = r => CAT[r] || '기타';
   const lpCat = x => x.why==='영상 미제작' ? '영상 미제작' : '모듈 연결 오류';
-  const cats = ['모듈 연결 오류','강사 누락','영상 미제작','기타'];
+  const cats = ['모듈 연결 오류','강사 누락','썸네일 누락','영상 미제작','기타'];
   const n = {}; cats.forEach(k=>n[k]=0);
   items.forEach(x=>[...new Set(x.r.map(catOf))].forEach(k=>n[k]++)); lp.forEach(x=>n[lpCat(x)]++);
   if (S.reason && !cats.includes(S.reason)) S.reason='';
