@@ -534,7 +534,7 @@ const S = {videos:[], modules:[], links:[], instructors:[], loaded:{v:false,m:fa
 const $ = (s, r=document) => r.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const CODE_RE = /^[PHC]\d{3}(-\d+)?$/;
-const KIND = {P:'성과백신', H:'마이크로멘토', C:'기업 맞춤 영상'};
+const KIND = {P:'성과백신', H:'마이크로멘토', C:'기업 맞춤 제작'};
 const STATUSES = ['사용','제작 중','미사용','리뉴얼로 대체됨'];
 const isTemp = c => /^T-/.test(c||'');
 const codeBadge = (code, kind) => isTemp(code) ? '<span class="pill warn">제작 중</span>' : `<span class="code ${esc(kind)}">${esc(code)}</span>`;
@@ -637,7 +637,7 @@ function viewSearch(){
   const aN = a => hUsed.filter(v=>a==='-' ? !v.area : v.area===a).length;
   $('#app').innerHTML = `
   <div class="kpis">
-    <div class="kpi total"><span>사용 중</span><b>${used.length}</b><small>마이크로멘토 ${kN('H')} · 성과백신 ${kN('P')} · 기업 맞춤 ${kN('C')}</small></div>
+    <div class="kpi total"><span>사용 중</span><b>${used.length}</b><small>마이크로멘토 ${kN('H')} · 성과백신 ${kN('P')} · 기업 맞춤 제작 ${kN('C')}</small></div>
     ${[...AREAS,'-'].map(a=>{ const n=aN(a); if(a==='-'&&!n) return ''; return `<button type="button" class="kpi" data-oa="${esc(a)}" style="${areaVar(a)}" aria-pressed="${S.f.area===a}" title="${a==='-'?'영역 미지정':a} 마이크로멘토만 보기"><span><i></i>${a==='-'?'영역 미지정':esc(a)}</span><b>${n}</b><small>마이크로멘토</small></button>`; }).join('')}
   </div>
   <div class="searchrow"><div class="q"><input id="q" type="search" placeholder="일련번호, 제목, 내용, 고객사로 검색" value="${esc(S.q)}" aria-label="검색어"></div>
