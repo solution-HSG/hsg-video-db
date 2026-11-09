@@ -514,7 +514,7 @@ button.kpi[aria-pressed="true"]{box-shadow:0 0 0 2px var(--ac,var(--accent)) ins
   <a class="brand" href="#search" id="home" title="처음 화면으로">HSG 영상 DB</a>
   <nav class="tabs" id="tabs">
     <a href="#search" data-v="search">검색</a>
-    <a href="#modules" data-v="modules">모듈별 보기</a>
+    <a href="#modules" data-v="modules">과정명별 보기</a>
     <a href="#catalog" data-v="catalog">영상 카달로그</a>
     <a href="#check" data-v="check">확인 필요 <span class="count" id="checkCount">0</span></a>
     <a href="#add" data-v="add">영상 등록</a>
@@ -564,7 +564,7 @@ function reasonsFor(v, ctx){
   if (!v.link && v.kind!=='C') r.push('링크 없음');   // C(기업맞춤)는 비메오 링크가 없는 게 정상
   if (!v.instructor || !ctx.inst.has(v.instructor)) r.push('강사 누락');
   if (!(v.summary||'').trim()) r.push('내용 요약 없음');
-  if (v.kind!=='C' && !ctx.linked.has(v.code) && !(v.kind==='P' && (ctx.pViaH.has(v.code) || v.noModule))) r.push('모듈 미연결');   // noModule: 원본 H 없이 만든 P (모듈 대상 아님)   // P는 연결된 H가 모듈에 있으면 통과
+  if (v.kind!=='C' && !ctx.linked.has(v.code) && !(v.kind==='P' && (ctx.pViaH.has(v.code) || v.noModule))) r.push('과정명 미연결');   // noModule: 원본 H 없이 만든 P (모듈 대상 아님)   // P는 연결된 H가 모듈에 있으면 통과
   if (!v.duration || !v.date) r.push('정보 직접 입력');
   if (v.kind==='H'){ if(!v.thumb && !v.thumb2) r.push('썸네일 없음'); else if(!v.thumb) r.push('썸네일 1 없음'); else if(!v.thumb2) r.push('썸네일 2 없음'); }
   return r;
@@ -651,14 +651,14 @@ function viewSearch(){
   <div class="filters">
     <label><span class="label">구분</span><select id="fKind">${opt('','전체',S.f.kind)}${opt('H',KIND.H,S.f.kind)}${opt('P',KIND.P,S.f.kind)}${opt('C',KIND.C,S.f.kind)}</select></label>
     <label><span class="label">영역</span><select id="fArea">${opt('','전체',S.f.area)}${AREAS.map(a=>opt(a,a,S.f.area)).join('')}${opt('-','(미지정)',S.f.area)}</select></label>
-    <label><span class="label">모듈</span><select id="fModule">${opt('','전체',S.f.module)}${mods.map(m=>opt(m.id,m.name,S.f.module)).join('')}</select></label>
+    <label><span class="label">과정명</span><select id="fModule">${opt('','전체',S.f.module)}${mods.map(m=>opt(m.id,m.name,S.f.module)).join('')}</select></label>
     <label><span class="label">강사</span><select id="fInst">${opt('','전체',S.f.inst)}${S.instructors.map(i=>opt(i.id, i.name? `${i.id} · ${i.name}`: i.id, S.f.inst)).join('')}${opt(NO_INST,'없음',S.f.inst)}</select></label>
     <label><span class="label">상태</span><select id="fStatus">${opt('','전체',S.f.status)}${STATUSES.map(s=>opt(s,s,S.f.status)).join('')}</select></label>
   </div>
   <div class="resultbar"><span><b>${res.length}</b>개 영상${S.q||S.f.kind||S.f.area||S.f.module||S.f.inst?' 검색됨':''}</span>
     ${(S.q||S.f.kind!=='H'||S.f.area||S.f.module||S.f.inst||S.f.status!=='사용')?'<button class="ghost" id="reset">필터 초기화</button>':''}</div>
   <div class="list" role="list">
-    <div class="row head"><span>썸네일</span><span>번호 · 제목 · 내용</span><span class="hide-s">영역</span><span class="hide-s">모듈</span><span class="hide-s">강사</span><span>길이</span><span class="hide-s">제작일자</span></div>
+    <div class="row head"><span>썸네일</span><span>번호 · 제목 · 내용</span><span class="hide-s">영역</span><span class="hide-s">과정명</span><span class="hide-s">강사</span><span>길이</span><span class="hide-s">제작일자</span></div>
     ${res.slice(0,S.shown).map(rowHtml).join('') || '<div class="empty">조건에 맞는 영상이 없습니다. 검색어나 필터를 바꿔 보세요.</div>'}
   </div>
   ${res.length>S.shown?`<div class="more"><button id="more">${res.length-S.shown}개 더 보기</button></div>`:''}`;
@@ -748,8 +748,8 @@ function metaTable(v, mods, rel, others){
     ['리뷰노트', v.review?'있음':'—'], ['Tool', v.tool?'O':'X'],
     v.maker ? ['제작', esc(v.maker)] : null,
     v.kind==='C' ? ['고객사', esc(v.client||'—')] : null,
-    v.kind==='C' ? ['과정명', esc(v.course||'—'), 1] : null,
-    ['모듈', mods.length? mods.map(esc).join(', ') : '—', 1],
+    v.kind==='C' ? ['고객사 과정명', esc(v.course||'—'), 1] : null,
+    ['과정명', mods.length? mods.map(esc).join(', ') : '—', 1],
     v.category ? ['분류', esc(v.category), 1] : null,
     v.target ? ['추천 대상', esc(v.target), 1] : null,
     v.pitch ? ['카달로그 요약', esc(v.pitch), 1] : null,
@@ -1190,10 +1190,10 @@ function viewModules(){
   const cur = S.links.filter(l=>l.module===S.mod).sort((a,b)=>a.pos-b.pos);
   const byCode={}; S.videos.forEach(v=>{ if(!byCode[v.code] || v.status==='사용') byCode[v.code]=v; });
   const total = cur.reduce((s,l)=>{ const v=byCode[l.code]; return s+(v? Math.max(0,secs(v.duration)):0); },0);
-  $('#app').innerHTML = `<h1>모듈별 보기</h1><p class="sub">표준 영상 모듈 리스트 V.4 기준 ${S.modules.length}개 강의. 강의를 고르면 편성 순서대로 영상을 보여 줍니다.</p>
+  $('#app').innerHTML = `<h1>과정명별 보기</h1><p class="sub">표준 영상 과정 리스트 V.4 기준 ${S.modules.length}개 과정. 과정을 고르면 편성 순서대로 영상을 보여 줍니다.</p>
   <section class="card mchart">
-    <div class="mchart-h"><h2>영역 · 모듈별 영상 수</h2><span class="hint">사용 중 영상 기준 · 막대를 누르면 그 모듈로 이동</span><button type="button" class="ghost" id="mchartT" aria-expanded="${S.mchart}">${S.mchart?'도표 접기':'도표 펼치기'}</button></div>
-    ${S.mchart?`<div class="mchart-g">${chart.map(g=>`<div class="mchart-c" style="${areaVar(g.a)}"><div class="mchart-a"><b><i></i>${esc(g.label)}</b><span>${g.rows.reduce((s,r)=>s+r.n,0)}편 · 모듈 ${g.rows.length}개</span></div>
+    <div class="mchart-h"><h2>영역 · 과정명별 영상 수</h2><span class="hint">사용 중 영상 기준 · 막대를 누르면 그 과정으로 이동</span><button type="button" class="ghost" id="mchartT" aria-expanded="${S.mchart}">${S.mchart?'도표 접기':'도표 펼치기'}</button></div>
+    ${S.mchart?`<div class="mchart-g">${chart.map(g=>`<div class="mchart-c" style="${areaVar(g.a)}"><div class="mchart-a"><b><i></i>${esc(g.label)}</b><span>${g.rows.reduce((s,r)=>s+r.n,0)}편 · 과정 ${g.rows.length}개</span></div>
       ${g.rows.map(r=>`<button type="button" class="mbar${r.m.id===S.mod?' on':''}" data-mb="${esc(r.m.id)}" data-ar="${esc(g.a)}" title="${esc(g.label)} · ${esc(r.m.name)}: ${r.n}편"><span class="mbar-l">${esc(r.m.name)}</span><span class="mbar-t"><i style="width:${(r.n/cMax*100).toFixed(1)}%"></i></span><span class="mbar-v">${r.n}</span></button>`).join('')}</div>`).join('')}</div>`:''}
   </section>
   <div class="mgrid">
@@ -1206,7 +1206,7 @@ function viewModules(){
           <span class="pos">${i+1}</span>
           <span>${l.code? codeBadge(l.code, v?v.kind:l.code[0]) :'<span class="pill">—</span>'}</span>
           <span class="t" style="min-width:0"><b style="font-weight:600">${esc(v? v.title : l.label)}</b> ${state}<br><span class="hint">${esc(v? [v.instructor, fmtDur(v.duration)].filter(Boolean).join(' · ') : (l.desc||'').split('\n')[0])}</span></span>
-          </div>`;}).join('') || '<div class="empty">이 강의에 연결된 영상이 없습니다. 영상 상세에서 이 모듈을 추가하면 여기에 나타납니다.</div>'}</div>
+          </div>`;}).join('') || '<div class="empty">이 과정에 연결된 영상이 없습니다. 영상 수정에서 이 과정명을 추가하면 여기에 나타납니다.</div>'}</div>
     </div></div>`;
   const ml = document.querySelector('.mlist'); if (ml) ml.scrollTop = keepScroll;
   if (viewModules.focus){ document.querySelector(`[data-m="${viewModules.focus}"]`)?.focus({preventScroll:true}); viewModules.focus=null; }
@@ -1223,10 +1223,10 @@ function viewCheck(c){
   const items = S.videos.map(v=>({v, r:reasonsFor(v,c)})).filter(x=>x.r.length);
   const lp = linkProblems();
   // 세부 항목: 모듈 연결 오류 / 강사 누락 / 영상 미제작 (그 밖의 사유는 '기타')
-  const CAT = {'모듈 미연결':'모듈 연결 오류', '강사 누락':'강사 누락', '썸네일 없음':'썸네일 누락', '썸네일 1 없음':'썸네일 누락', '썸네일 2 없음':'썸네일 누락'};
+  const CAT = {'과정명 미연결':'과정명 연결 오류', '강사 누락':'강사 누락', '썸네일 없음':'썸네일 누락', '썸네일 1 없음':'썸네일 누락', '썸네일 2 없음':'썸네일 누락'};
   const catOf = r => CAT[r] || '기타';
-  const lpCat = x => x.why==='영상 미제작' ? '영상 미제작' : '모듈 연결 오류';
-  const cats = ['모듈 연결 오류','강사 누락','썸네일 누락','영상 미제작','기타'];
+  const lpCat = x => x.why==='영상 미제작' ? '영상 미제작' : '과정명 연결 오류';
+  const cats = ['과정명 연결 오류','강사 누락','썸네일 누락','영상 미제작','기타'];
   const n = {}; cats.forEach(k=>n[k]=0);
   items.forEach(x=>[...new Set(x.r.map(catOf))].forEach(k=>n[k]++)); lp.forEach(x=>n[lpCat(x)]++);
   if (S.reason && !cats.includes(S.reason)) S.reason='';
@@ -1237,11 +1237,11 @@ function viewCheck(c){
       <span><span class="code ${esc(v.kind)}">${esc(v.code)}</span></span>
       <span class="t"><b>${esc(v.title)}</b><span class="pills" style="white-space:normal">${r.map(x=>`<span class="pill warn">${esc(x)}</span>`).join('')}</span></span></div>`;
   const total = items.length + lp.length;
-  $('#app').innerHTML = `<h1>확인 필요</h1><p class="sub">빠진 칸이나 맞지 않는 값이 있는 영상, 아직 만들지 않은 모듈 영상입니다. 고치면 목록에서 사라집니다.</p>
+  $('#app').innerHTML = `<h1>확인 필요</h1><p class="sub">빠진 칸이나 맞지 않는 값이 있는 영상, 아직 만들지 않은 과정 영상입니다. 고치면 목록에서 사라집니다.</p>
   <div class="reasons"><button aria-pressed="${!S.reason}" data-r="">전체 ${total}</button>${cats.filter(k=>n[k]).map(k=>`<button aria-pressed="${S.reason===k}" data-r="${esc(k)}">${esc(k)} ${n[k]}</button>`).join('')}</div>
   ${vids.length?`${lps.length?`<h2 style="font-size:15px;margin:14px 0 8px">영상 ${vids.length}</h2>`:''}<div class="list">${vids.slice(0,S.shown).map(vRow).join('')}</div>
     ${vids.length>S.shown?`<div class="more"><button id="more">${vids.length-S.shown}개 더 보기</button></div>`:''}`:''}
-  ${lps.length && vids.length<=S.shown?`${vids.length?`<h2 style="font-size:15px;margin:22px 0 8px">모듈리스트 ${lps.length}</h2>`:''}<div class="list">${lps.map(lpRow).join('')}</div>`:''}
+  ${lps.length && vids.length<=S.shown?`${vids.length?`<h2 style="font-size:15px;margin:22px 0 8px">과정 리스트 ${lps.length}</h2>`:''}<div class="list">${lps.map(lpRow).join('')}</div>`:''}
   ${!vids.length && !lps.length?'<div class="empty">확인할 항목이 없습니다.</div>':''}`;
   document.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{S.reason=b.dataset.r;S.shown=60;render();});
   $('#more')?.addEventListener('click',()=>{S.shown+=100;render();});
@@ -1282,12 +1282,12 @@ function viewAdd(){
         ${dup&&dup.length?`<span class="hint" style="color:var(--warn)">중복 번호: ${esc(p.code)}가 이미 ${dup.length}건 있습니다. 리뉴얼이면 그대로 저장하고, 기존 영상 상태를 바꿔 주세요.</span>`:''}</label>
       <label><span class="label">제목 (자동)</span><input value="${esc(p.title)}" disabled></label>`}
       <label><span class="label">강사</span><select id="aInst">${opt('','선택',draft.instructor)}${S.instructors.map(i=>opt(i.id,i.name?`${i.id} · ${i.name}`:i.id,draft.instructor)).join('')}${noInstOpt(draft.instructor)}</select></label>
-      <label><span class="label">영역 <span class="hint">비우면 모듈에 따라 자동</span></span><select id="aArea">${areaOpts(draft.area)}</select></label>
+      <label><span class="label">영역 <span class="hint">비우면 과정명에 따라 자동</span></span><select id="aArea">${areaOpts(draft.area)}</select></label>
       <label><span class="label">길이 (분:초)</span><input id="aDur" placeholder="06:24" value="${esc(draft.duration)}" inputmode="numeric"></label>
       <label><span class="label">제작일자</span><input id="aDate" type="date" value="${esc(draft.date)}"></label>
-      ${kindNow==='C'?`<label><span class="label">고객사</span><input id="aClient" value="${esc(draft.client)}"></label><label class="full"><span class="label">과정명</span><input id="aCourse" value="${esc(draft.course)}"></label>`:'<span></span>'}
+      ${kindNow==='C'?`<label><span class="label">고객사</span><input id="aClient" value="${esc(draft.client)}"></label><label class="full"><span class="label">고객사 과정명</span><input id="aCourse" value="${esc(draft.course)}"></label>`:'<span></span>'}
       <div class="full">${keymsgBlock('a', draft.summary)}</div>
-      <div class="full"><span class="label">모듈</span>${moduleChips('a', draft.modules)}</div>
+      <div class="full"><span class="label">과정명</span>${moduleChips('a', draft.modules)}</div>
       <div class="full"><span class="label">스크립트 <span class="hint">영상 스크립트 파일 · 위 내용 요약에서 올린 스크립트도 여기에 저장됩니다</span></span><div id="aScriptSlot">${scriptSlot('a', draft.script, draft.scriptName, true)}</div></div>
       <div class="full"><span class="label">썸네일 <span class="hint">두 장까지 · 1은 강사 얼굴 장면 · 카달로그에 나란히 들어갑니다 · 나중에 넣어도 됩니다</span></span>
         <div class="thumb-pair two add">${[['thumbPrev',''],['thumbPrev2','2']].map(([k,n],i)=> draft[k]
@@ -1301,8 +1301,8 @@ function viewAdd(){
     <ol style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px">
       <li>비메오에 <span class="mono">번호_제목</span> 규칙으로 업로드</li>
       <li>링크와 제목을 여기에 붙여넣기</li><li>강사 선택, 길이 입력</li>
-      <li>스크립트를 올려 내용 요약 초안 받기 → 다듬기</li><li>모듈 선택 → 저장</li></ol>
-    <div class="notice info">편집 전 영상은 '아직 편집 전이에요'를 체크하고 가제와 모듈만 넣어 저장하세요. 편집이 끝나면 그 영상의 수정 화면에서 일련번호와 링크를 넣고 상태를 '사용'으로 바꾸면 됩니다.</div>
+      <li>스크립트를 올려 내용 요약 초안 받기 → 다듬기</li><li>과정명 선택 → 저장</li></ol>
+    <div class="notice info">편집 전 영상은 '아직 편집 전이에요'를 체크하고 가제와 과정명만 넣어 저장하세요. 편집이 끝나면 그 영상의 수정 화면에서 일련번호와 링크를 넣고 상태를 '사용'으로 바꾸면 됩니다.</div>
     <div class="notice info">지금은 비메오 API 없이 쓰는 버전이라 길이와 제작일자는 직접 입력합니다. API 토큰이 연결되면 링크만으로 자동으로 채워집니다.</div>
   </div></div>`;
   const keep = (id, k) => { const el=$('#'+id); if(el) el.addEventListener('input',()=>{ draft[k]=el.value; }); };
@@ -1424,7 +1424,7 @@ ${text}`;
 function moduleChips(p, list){
   const mods=S.modules.slice().sort((a,b)=>a.name.localeCompare(b.name,'ko'));
   return `<div class="chipin" style="margin-top:4px">${list.map(id=>`<span class="chip">${esc(modName(id))}<button type="button" data-rm="${esc(id)}" aria-label="${esc(modName(id))} 빼기">×</button></span>`).join('')}
-    <select id="${p}Mod" style="width:auto;min-width:160px">${opt('','+ 모듈 추가','')}${mods.filter(m=>!list.includes(m.id)).map(m=>opt(m.id,m.name,'')).join('')}</select></div>`;
+    <select id="${p}Mod" style="width:auto;min-width:160px">${opt('','+ 과정명 추가','')}${mods.filter(m=>!list.includes(m.id)).map(m=>opt(m.id,m.name,'')).join('')}</select></div>`;
 }
 function bindModuleChips(p, list, after){
   $('#'+p+'Mod').onchange=e=>{ if(e.target.value){ list.push(e.target.value); after(); } };
@@ -1449,7 +1449,7 @@ function statModules(){
   const prod=new Set(S.videos.filter(v=>v.status==='제작 중').map(v=>v.code));
   const rows=S.modules.map(m=>{ const ls=S.links.filter(l=>l.module===m.id); const todo=ls.filter(l=>!l.code||prod.has(l.code)).length; return {label:m.name, n:ls.filter(l=>active.has(l.code)).length, sub:todo?`미제작 ${todo}`:''}; }).sort((a,b)=>b.n-a.n||a.label.localeCompare(b.label,'ko'));
   const empty=rows.filter(r=>!r.n).length;
-  return `<div class="card"><h2>모듈별 영상 수</h2><p class="hint" style="margin:0">V.4 강의 ${rows.length}개에 연결된 '사용' 상태 영상 수입니다.${empty?` 영상이 없는 강의는 ${empty}개입니다.`:''}</p>${bars(S.modAll? rows : rows.slice(0,8))}${rows.length>8?`<button type="button" id="modMore" class="ghost" style="align-self:center" aria-expanded="${!!S.modAll}">${S.modAll?'접기 ▴':`더보기 (${rows.length-8}개 더) ▾`}</button>`:''}</div>`;
+  return `<div class="card"><h2>과정명별 영상 수</h2><p class="hint" style="margin:0">V.4 강의 ${rows.length}개에 연결된 '사용' 상태 영상 수입니다.${empty?` 영상이 없는 강의는 ${empty}개입니다.`:''}</p>${bars(S.modAll? rows : rows.slice(0,8))}${rows.length>8?`<button type="button" id="modMore" class="ghost" style="align-self:center" aria-expanded="${!!S.modAll}">${S.modAll?'접기 ▴':`더보기 (${rows.length-8}개 더) ▾`}</button>`:''}</div>`;
 }
 function viewAdmin(){
   const act=S.videos.filter(v=>v.status==='사용');
@@ -1470,7 +1470,7 @@ function viewAdmin(){
         <div class="tile"><span class="label">전체 영상</span><b>${act.length}</b><span class="hint">사용 중 · 전체 ${S.videos.length}편</span></div>
         ${kinds.map(x=>`<div class="tile"><span class="label">${esc(KIND[x.k])}</span><b>${x.n}</b><span class="hint">${(()=>{const d=S.videos.filter(v=>v.kind===x.k&&v.status!=='사용'&&v.status!=='제작 중').length;return d?`삭제·대체 ${d}편 제외`:'모두 사용 중';})()}</span></div>`).join('')}
         <div class="tile"><span class="label">제작 중</span><b>${S.videos.filter(v=>v.status==='제작 중').length}</b><span class="hint">편집 전 · 링크 없이 등록</span></div>
-        <div class="tile"><span class="label">모듈 (V.4)</span><b>${S.modules.length}</b><span class="hint">영상 없는 강의 ${emptyMods}개</span></div>
+        <div class="tile"><span class="label">과정명 (V.4)</span><b>${S.modules.length}</b><span class="hint">영상 없는 강의 ${emptyMods}개</span></div>
         <a class="tile" href="#check"><span class="label">확인 필요</span><b style="color:var(--warn)">${nCheck}</b><span class="hint">목록 열기 →</span></a>
       </div></section>
     <div class="grid2">${statInstructors()}${statModules()}</div>
@@ -1728,7 +1728,7 @@ async function loadHistory(id){
 }
 async function logHistory(){}
 
-const FIELDS = {area:'영역',script:'스크립트',scriptName:'스크립트',target:'추천 대상',pitch:'카달로그 요약',sheetModule:'모듈',tool:'Tool',title:'제목',instructor:'강사',link:'링크',duration:'길이',date:'제작일자',summary:'내용 요약',detail:'영상 내용',status:'상태',related:'연결 영상',client:'고객사',course:'과정명',remark:'비고',review:'리뷰노트'};
+const FIELDS = {area:'영역',script:'스크립트',scriptName:'스크립트',target:'추천 대상',pitch:'카달로그 요약',sheetModule:'과정명',tool:'Tool',title:'제목',instructor:'강사',link:'링크',duration:'길이',date:'제작일자',summary:'내용 요약',detail:'영상 내용',status:'상태',related:'연결 영상',client:'고객사',course:'과정명',remark:'비고',review:'리뷰노트'};
 let editMods=[];
 function editHtml(v){
   editMods = S.links.filter(l=>l.code===v.code).map(l=>l.module).filter((x,i,a)=>a.indexOf(x)===i);
@@ -1742,12 +1742,12 @@ function editHtml(v){
     <label class="full"><span class="label">비메오 링크</span><input id="eLink" value="${esc(v.link)}"></label>
     <label><span class="label">길이</span><input id="eDur" value="${esc(v.duration)}"></label>
     <label><span class="label">${v.kind==='C'?'납품일자':'제작일자'}</span><input id="eDate" value="${esc(v.date)}" placeholder="2026-10-19"></label>
-    ${v.kind==='C'?`<label><span class="label">고객사</span><input id="eClient" value="${esc(v.client)}"></label><label><span class="label">과정명</span><input id="eCourse" value="${esc(v.course)}"></label>`:''}
+    ${v.kind==='C'?`<label><span class="label">고객사</span><input id="eClient" value="${esc(v.client)}"></label><label><span class="label">고객사 과정명</span><input id="eCourse" value="${esc(v.course)}"></label>`:''}
     <div class="full">${keymsgBlock('e', v.summary)}</div>
     <label class="full"><span class="label">추천 대상 <span class="hint">카달로그에 들어갑니다</span></span><input id="eTarget" value="${esc(v.target||'')}" placeholder="예: 평가 면담의 납득성을 높이고자 하는 리더"></label>
     <label class="full"><span class="label">카달로그 요약 <span class="hint">2문장 · 카달로그 영상 상세에 들어갑니다</span></span><textarea id="ePitch" rows="3" placeholder="필요나 문제 한 문장 + '본 영상에서는 …' 한 문장">${esc(v.pitch||'')}</textarea></label>
     <label class="full"><span class="label">연결 영상 (번호, 쉼표로 구분)</span><input id="eRel" value="${esc((v.related||[]).join(', '))}" placeholder="P027, H064"></label>
-    <div class="full"><span class="label">모듈 <span class="hint">고객사용 시트의 모듈 칸에도 이 이름이 들어갑니다</span></span><div id="eMods">${moduleChips('e', editMods)}</div></div>
+    <div class="full"><span class="label">과정명 <span class="hint">고객사용 시트의 모듈 칸에도 이 이름이 들어갑니다</span></span><div id="eMods">${moduleChips('e', editMods)}</div></div>
     <label class="full"><span class="label">비고</span><textarea id="eNote" rows="2" placeholder="삭제·미사용·리뉴얼 등 사유 (사용 중인 영상은 비워 두세요)">${esc(v.remark||'')}</textarea></label>
     <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="eReview" style="width:auto" ${v.review?'checked':''}> 리뷰노트 있음</label>
     <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="eTool" style="width:auto" ${v.tool?'checked':''}> Tool 있음</label>
@@ -1783,7 +1783,7 @@ function bindEdit(v){
       if (changed.length) await S.db.doc('videos/'+v.id).update(nv);
       for (const m of add) await addLink(m, v.code, nv.title);
       for (const l of rm) await S.db.doc('mlinks/'+l.id).delete();
-      const log = changed.map(k=>FIELDS[k]||k); if(add.length||rm.length) log.push('모듈');
+      const log = changed.map(k=>FIELDS[k]||k); if(add.length||rm.length) log.push('과정명');
       if (log.length){ await logHistory(v.id, log); toast('저장했습니다'); } else toast('바뀐 내용이 없습니다');
       S.editing=false; renderSheet();
       const SHEET_KEYS=['title','link','sheetModule','duration','status','remark','area','summary','instructor','date','review','tool','related'];
