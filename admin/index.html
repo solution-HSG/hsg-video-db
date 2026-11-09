@@ -709,11 +709,12 @@ function reasonsFor(v, ctx){
 function ctx(){
   const activeByCode={}; S.videos.forEach(v=>{ if(v.status==='사용') activeByCode[v.code]=(activeByCode[v.code]||0)+1; });
   const linked = new Set(S.links.map(l=>l.code).filter(Boolean));
-  // P는 H에서 파생: 서로 '연결 영상'으로 이어진 사용 중 H가 모듈에 있으면 모듈이 있는 것으로 본다
+  // P는 H에서 파생: '연결 영상'으로 이어진 H 영상이 있으면 모듈이 있는 것으로 본다
+  const hCodes = new Set(S.videos.filter(v=>v.kind==='H').map(v=>v.code));
   const pViaH = new Set();
-  S.videos.forEach(v=>{ if(v.status!=='사용') return; const rel=v.related||[];
-    if (v.kind==='P' && rel.some(c=>/^H/.test(c) && linked.has(c))) pViaH.add(v.code);
-    if (v.kind==='H' && linked.has(v.code)) rel.forEach(c=>{ if(/^P/.test(c)) pViaH.add(c); }); });
+  S.videos.forEach(v=>{ const rel=v.related||[];
+    if (v.kind==='P' && rel.some(c=>/^H/.test(c) && hCodes.has(c))) pViaH.add(v.code);
+    if (v.kind==='H') rel.forEach(c=>{ if(/^P/.test(c)) pViaH.add(c); }); });
   return {activeByCode, inst:instSet(), linked, pViaH};
 }
 function linkProblems(){
