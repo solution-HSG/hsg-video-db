@@ -51,7 +51,7 @@ s = rep(s, "toast('편집 권한이 없어 저장하지 못했습니다');",
         "toast('관리자 로그인이 풀려 저장하지 못했습니다. 다시 로그인해 주세요.'); showLogin();")
 
 # 4) 구글 시트 반영: 서버 함수 → Apps Script (시트 3개)
-SHEET_NEW = r'''/* ---------- Google Sheet sync (고객사용 시트·영상리스트·모듈리스트) ---------- */
+SHEET_NEW = r'''/* ---------- Google Sheet sync (고객사용 시트만) ---------- */
 function sheetErr(e){
   if (e?.code==='sheet_not_configured') return '구글 시트 반영 실패: 시트 연결 주소가 아직 설정되지 않았습니다';
   if (e?.code==='sheet') return '구글 시트 반영 실패: '+String(e.message||'').slice(0,90);
@@ -61,6 +61,8 @@ function sheetErr(e){
 const SHEET_LABEL = {customer:'고객사용', list:'영상리스트', modules:'모듈리스트'};
 async function sheetCall(payload){
   const r = await HSG.call('sheet', {payload});
+  // 고객사용 시트만 연결: 영상리스트·모듈리스트 결과는 보지 않는다
+  if (r.results && 'customer' in r.results && !(r.errors||[]).some(x=>String(x).startsWith('customer'))) return '고객사용 '+r.results.customer;
   if (!r.ok) throw {code:'sheet', message:(r.errors||[]).map(x=>{ const [k,...m]=String(x).split(': '); return (SHEET_LABEL[k]||k)+' '+m.join(': '); }).join(' / ') || r.error || '시트가 요청을 거절했습니다'};
   return Object.entries(r.results||{}).map(([k,m])=>(SHEET_LABEL[k]||k)+' '+m).join(' · ');
 }

@@ -1897,9 +1897,11 @@ function renderSheet(){
     $('#edit')?.addEventListener('click',()=>{S.editing=true;renderSheet();});
     bindThumb(v);
     bindScriptSlot('d', v.script, v.scriptName,
-      async (text,name)=>{ try{ await S.db.doc('videos/'+v.id).update({script:text, scriptName:name}); toast('스크립트를 저장했습니다'); }catch(e){ writeFail(e); } },
+      async (text,name)=>{ try{ await S.db.doc('videos/'+v.id).update({script:text, scriptName:name}); S.autoSum=v.id; toast('스크립트를 저장했습니다 · AI가 내용 요약 초안을 만듭니다'); renderSheet(); }catch(e){ writeFail(e); } },
       async ()=>{ try{ await S.db.doc('videos/'+v.id).update({script:'', scriptName:''}); toast('스크립트를 뺐습니다'); }catch(e){ writeFail(e); } });
     $('[data-sre="d"]')?.addEventListener('click',()=>resummarize(v));
+    // 스크립트를 올리면 바로 요약 초안을 만든다 (저장은 확인 후)
+    if (S.autoSum===v.id && v.script){ S.autoSum=null; setTimeout(()=>{ resummarize(v); $('#re-d')?.scrollIntoView({behavior:'smooth', block:'center'}); }, 50); }
     $('#undoSum')?.addEventListener('click',async()=>{ try{ await S.db.doc('videos/'+v.id).update({summary:v.summaryPrev, target:v.targetPrev||v.target||'', pitch:v.pitchPrev||v.pitch||'', summaryPrev:'', targetPrev:'', pitchPrev:''}); toast('이전 내용 요약으로 되돌렸습니다'); }catch(e){ writeFail(e); } });
     $('#toSheet')?.addEventListener('click',async e=>{ const b=e.currentTarget; b.disabled=true; b.textContent='반영 중…'; await runSync(v.id, v, null, null, ''); if(b.isConnected){ b.disabled=false; b.textContent='다시 반영'; } });
     $('#del')?.addEventListener('click',()=>{
@@ -2025,7 +2027,7 @@ function writeFail(err){
   else toast('저장하지 못했습니다. 잠시 후 다시 시도해 주세요.');
 }
 
-/* ---------- Google Sheet sync (고객사용 시트·영상리스트·모듈리스트) ---------- */
+/* ---------- Google Sheet sync (고객사용 시트만) ---------- */
 function sheetErr(e){
   if (e?.code==='sheet_not_configured') return '구글 시트 반영 실패: 시트 연결 주소가 아직 설정되지 않았습니다';
   if (e?.code==='sheet') return '구글 시트 반영 실패: '+String(e.message||'').slice(0,90);
@@ -2035,6 +2037,8 @@ function sheetErr(e){
 const SHEET_LABEL = {customer:'고객사용', list:'영상리스트', modules:'모듈리스트'};
 async function sheetCall(payload){
   const r = await HSG.call('sheet', {payload});
+  // 고객사용 시트만 연결: 영상리스트·모듈리스트 결과는 보지 않는다
+  if (r.results && 'customer' in r.results && !(r.errors||[]).some(x=>String(x).startsWith('customer'))) return '고객사용 '+r.results.customer;
   if (!r.ok) throw {code:'sheet', message:(r.errors||[]).map(x=>{ const [k,...m]=String(x).split(': '); return (SHEET_LABEL[k]||k)+' '+m.join(': '); }).join(' / ') || r.error || '시트가 요청을 거절했습니다'};
   return Object.entries(r.results||{}).map(([k,m])=>(SHEET_LABEL[k]||k)+' '+m).join(' · ');
 }

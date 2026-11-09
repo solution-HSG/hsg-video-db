@@ -1,6 +1,6 @@
 /**
  * HSG 영상 DB → 구글 시트 자동 반영
- * 사이트에서 영상을 저장·삭제하면 아래 세 시트에 바로 반영합니다.
+ * 사이트에서 영상을 저장·삭제하면 고객사용 시트에만 반영합니다. (2026-11 부터 영상리스트·모듈리스트는 반영하지 않음)
  *  1) 고객사용 시트  'H영상' 탭
  *  2) 영상리스트     'H_판매용영상' 탭 (P, C 탭은 건드리지 않음)
  *  3) 모듈리스트     'V.4' 탭 (제목만 적힌 메모 칸은 건드리지 않음)
@@ -31,12 +31,8 @@ function doPost(e) {
   try {
     if (body.op === 'remove') {
       run('customer', () => removeCustomer_(v));
-      run('list', () => removeList_(v));
-      run('modules', () => removeModules_(v));
     } else {
       run('customer', () => syncCustomer_(v, body.prevLink, body.prevTitle));
-      run('list', () => syncList_(v, body.prevLink, body.prevTitle));
-      run('modules', () => syncModules_(v));
     }
   } finally {
     SpreadsheetApp.flush();
