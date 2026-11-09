@@ -437,6 +437,8 @@ label.btn.thumb-both,.form label.btn.thumb-both{display:inline-flex;flex-directi
 
 .contact{display:none}
 @media (max-width:999px){ .contact{display:block;order:9;width:100%;font-size:12px;color:var(--muted)} .contact span{font-weight:600;margin-right:6px} .contact b{font-weight:500} .contact b br{display:none} .contact a{margin-left:6px;color:var(--accent)} }
+.copy{display:none}
+.copy-m{padding:0 16px 28px;text-align:center;font-size:11.5px;color:var(--muted)}
 /* ===== B안 레이아웃: 왼쪽 남색 메뉴 · 목록 · 오른쪽 상세 ===== */
 :root{--nav:#14213a;--nav-2:#24365a;--nav-ink:#c6cfdc;--nav-w:224px;--dock-w:480px}
 .rthumb{width:112px;aspect-ratio:16/9;border-radius:7px;overflow:hidden;background:var(--sunk);display:grid;place-items:center}
@@ -469,6 +471,8 @@ button.kpi[aria-pressed="true"]{border-color:var(--ac,var(--accent));box-shadow:
   .contact span{display:block;font-size:11px;letter-spacing:.06em;color:#8d9ab0;margin-bottom:4px;font-weight:600}
   .contact b{display:block;color:#fff;font-weight:600}
   .contact a{color:#9cc2f0;text-decoration:none;word-break:break-all}.contact a:hover{text-decoration:underline}
+  .copy{display:block;padding:8px 12px 0;font-size:10.5px;line-height:1.5;color:#7d8aa0}
+  .copy-m{display:none}
   .who{margin:0;padding:10px 12px;border-top:1px solid rgba(255,255,255,.1);color:var(--nav-ink)}.who .linkish{color:#fff}
   main.wrap{max-width:1320px;padding-inline:26px;margin:0}
   .row{grid-template-columns:112px minmax(0,1fr) 84px 128px 56px 52px 88px}
@@ -531,9 +535,11 @@ button.kpi[aria-pressed="true"]{box-shadow:0 0 0 2px var(--ac,var(--accent)) ins
   </nav>
   <div class="contact"><span>DB 문의</span><b>AX사업실 영상콘텐츠팀 <br>정혜원 매니저</b><a href="mailto:hwjung@hsg.or.kr">hwjung@hsg.or.kr</a></div>
   <div class="who" id="who"></div>
+  <div class="copy">© 2026 Human Solution Group.<br>All rights reserved.</div>
 </div></header>
 
 <main class="wrap" id="app"><div class="loading" id="boot">영상 목록을 불러오는 중입니다…</div></main>
+<footer class="copy-m">© 2026 Human Solution Group. All rights reserved.</footer>
 <div id="sheetRoot"></div>
 <div id="toastRoot"></div>
 <button type="button" id="toTop" class="to-top" aria-label="맨 위로" title="맨 위로" hidden><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
