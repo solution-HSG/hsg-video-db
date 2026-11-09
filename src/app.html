@@ -429,6 +429,46 @@ label.btn.thumb-both,.form label.btn.thumb-both{display:inline-flex;flex-directi
 .mchart-a b{display:inline-flex;align-items:center;gap:6px}
 .mchart-a b i,.marea-h .dot{width:8px;height:8px;border-radius:2px;background:var(--ac,var(--muted));display:inline-block;margin-right:6px}
 .mchart-c .mbar-t i{background:var(--ac,var(--accent))}
+
+/* ===== B안 레이아웃: 왼쪽 남색 메뉴 · 목록 · 오른쪽 상세 ===== */
+:root{--nav:#14213a;--nav-2:#24365a;--nav-ink:#c6cfdc;--nav-w:224px;--dock-w:480px}
+.rthumb{width:112px;aspect-ratio:16/9;border-radius:7px;overflow:hidden;background:var(--sunk);display:grid;place-items:center}
+.rthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.rthumb i{font-style:normal;font-weight:700;color:var(--muted);font-size:13px}
+.row .t b .rcodes{display:inline-flex;gap:4px;margin-right:7px;vertical-align:1px}
+.row .t b .rcodes .code{font-size:11px}
+.row.sel{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:14px}
+.kpi{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 14px;font:inherit;color:var(--fg)}
+.kpi span{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);font-weight:500}
+.kpi span i{width:8px;height:8px;border-radius:2px;background:var(--ac,var(--muted))}
+.kpi b{font-size:24px;font-weight:800;line-height:1.15}
+.kpi small{font-size:11.5px;color:var(--muted)}
+.kpi.total{background:var(--nav);border-color:var(--nav);color:#fff}.kpi.total span,.kpi.total small{color:var(--nav-ink)}
+button.kpi{cursor:pointer}button.kpi:hover{border-color:var(--ac,var(--accent))}
+button.kpi[aria-pressed="true"]{border-color:var(--ac,var(--accent));box-shadow:inset 0 0 0 1px var(--ac,var(--accent))}
+@media (max-width:720px){ .rthumb{width:72px} .row{grid-template-columns:72px minmax(0,1fr) 52px} .kpis{display:flex;overflow-x:auto;gap:8px;padding-bottom:2px} .kpi{flex:none;min-width:104px;padding:8px 11px} .kpi b{font-size:19px} .kpi small{display:none} }
+@media (min-width:1000px){
+  body{padding-left:var(--nav-w)}
+  header.top{position:fixed;left:0;top:0;bottom:0;width:var(--nav-w);background:var(--nav);border:0;z-index:6}
+  header.top .topbar{flex-direction:column;align-items:stretch;flex-wrap:nowrap;height:100%;padding:22px 14px;max-width:none;gap:0}
+  .brand{color:#fff;font-size:17px;font-weight:800;padding:0 10px 26px}
+  nav.tabs{flex-direction:column;gap:2px}
+  nav.tabs a{border-radius:9px;padding:10px 12px;color:var(--nav-ink);justify-content:space-between}
+  nav.tabs a:hover{background:rgba(255,255,255,.06);color:#fff}
+  nav.tabs a[aria-current="page"]{background:var(--nav-2);color:#fff;font-weight:600}
+  nav.tabs .count{background:#f0a83a;color:var(--nav);font-weight:700}
+  .who{margin:auto 0 0;padding:10px 12px;color:var(--nav-ink)}.who .linkish{color:#fff}
+  main.wrap{max-width:1320px;padding-inline:26px;margin:0}
+  .row{grid-template-columns:112px minmax(0,1fr) 84px 128px 56px 52px 88px}
+}
+@media (min-width:1360px){
+  body.has-sheet main.wrap{margin-right:var(--dock-w)}
+  body.has-sheet .scrim{background:transparent;pointer-events:none}
+  body.has-sheet .sheet{width:var(--dock-w);box-shadow:-8px 0 24px rgba(15,25,45,.06)}
+  body.has-sheet .list > .row:not([style]){grid-template-columns:112px minmax(0,1fr) 84px 52px}
+  body.has-sheet .list > .row:not([style]) > span:nth-child(4), body.has-sheet .list > .row:not([style]) > span:nth-child(5), body.has-sheet .list > .row:not([style]) > span:nth-child(7){display:none}
+}
 </style>
 
 <header class="top"><div class="wrap topbar">
@@ -560,9 +600,9 @@ function viewSearch(){
   const hUsed = used.filter(v=>v.kind==='H');
   const aN = a => hUsed.filter(v=>a==='-' ? !v.area : v.area===a).length;
   $('#app').innerHTML = `
-  <div class="dbsum">
-    <div class="dbsum-t"><b>${used.length}</b>편 사용 중<span>H ${kN('H')} · P ${kN('P')} · C ${kN('C')}</span></div>
-    <div class="dbsum-a"><span class="lab">H 영역</span>${[...AREAS,'-'].map(a=>{ const n=aN(a); if(a==='-'&&!n) return ''; return `<button type="button" data-oa="${esc(a)}" style="${areaVar(a)}" aria-pressed="${S.f.area===a}" title="${a==='-'?'영역 미지정':a} H 영상만 보기"><i></i>${a==='-'?'미지정':esc(a)} <em>${n}</em></button>`; }).join('')}</div>
+  <div class="kpis">
+    <div class="kpi total"><span>사용 중</span><b>${used.length}</b><small>H ${kN('H')} · P ${kN('P')} · C ${kN('C')}</small></div>
+    ${[...AREAS,'-'].map(a=>{ const n=aN(a); if(a==='-'&&!n) return ''; return `<button type="button" class="kpi" data-oa="${esc(a)}" style="${areaVar(a)}" aria-pressed="${S.f.area===a}" title="${a==='-'?'영역 미지정':a} H 영상만 보기"><span><i></i>${a==='-'?'영역 미지정':esc(a)}</span><b>${n}</b><small>H 영상</small></button>`; }).join('')}
   </div>
   <div class="searchrow"><div class="q"><input id="q" type="search" placeholder="일련번호, 제목, 내용, 고객사로 검색" value="${esc(S.q)}" aria-label="검색어"></div>
     <select id="sort" aria-label="정렬" style="width:auto">${opt('code','번호순',S.sort)}${opt('new','최신 제작순',S.sort)}${opt('old','오래된 순',S.sort)}${opt('long','길이 긴 순',S.sort)}${opt('short','길이 짧은 순',S.sort)}</select></div>
@@ -576,7 +616,7 @@ function viewSearch(){
   <div class="resultbar"><span><b>${res.length}</b>개 영상${S.q||S.f.kind||S.f.area||S.f.module||S.f.inst?' 검색됨':''}</span>
     ${(S.q||S.f.kind||S.f.area||S.f.module||S.f.inst||S.f.status!=='사용')?'<button class="ghost" id="reset">필터 초기화</button>':''}</div>
   <div class="list" role="list">
-    <div class="row head"><span>번호</span><span>제목 · 내용</span><span class="hide-s">영역</span><span class="hide-s">모듈</span><span class="hide-s">강사</span><span>길이</span><span class="hide-s">제작일자</span></div>
+    <div class="row head"><span>썸네일</span><span>번호 · 제목 · 내용</span><span class="hide-s">영역</span><span class="hide-s">모듈</span><span class="hide-s">강사</span><span>길이</span><span class="hide-s">제작일자</span></div>
     ${res.slice(0,S.shown).map(rowHtml).join('') || '<div class="empty">조건에 맞는 영상이 없습니다. 검색어나 필터를 바꿔 보세요.</div>'}
   </div>
   ${res.length>S.shown?`<div class="more"><button id="more">${res.length-S.shown}개 더 보기</button></div>`:''}`;
@@ -691,9 +731,10 @@ function rowHtml(v){
   const st = v.status!=='사용' && !isTemp(v.code) ? ` <span class="pill ${v.status==='삭제'?'bad':'warn'}"${v.remark?` title="${esc(v.remark)}"`:''}>${esc(v.status)}</span>`:'';
   const pv = v.kind==='H' ? (v.related||[]).filter(c=>/^P\d{3}/.test(c)) : [];
   const pb = pv.map(c=>`<span class="code P" title="같은 내용의 성과백신 영상">${esc(c)}</span>`).join('');
-  return `<div class="row" role="listitem" tabindex="0" data-id="${esc(v.id)}">
-    <span class="codes">${codeBadge(v.code, v.kind)}${pb}</span>
-    <span class="t"><b>${esc(v.title)}${st}</b><span>${esc(sub)}</span></span>
+  const tu = thumbUrl(v);
+  return `<div class="row${S.open===v.id?' sel':''}" role="listitem" tabindex="0" data-id="${esc(v.id)}">
+    <span class="rthumb">${tu?`<img src="${tu}" alt="" loading="lazy">`:`<i>${esc(v.kind)}</i>`}</span>
+    <span class="t"><b><span class="rcodes">${codeBadge(v.code, v.kind)}${pb}</span>${esc(v.title)}${st}</b><span>${esc(sub)}</span></span>
     <span class="hide-s area-cell">${areaTag(v.area)}</span>
     <span class="hide-s mod-cell" title="${esc(videoModules(v).join(', '))}">${esc(videoModules(v).join(', ')||'—')}</span>
     <span class="mono hide-s">${esc(v.instructor||'—')}</span>
@@ -1583,7 +1624,7 @@ function bindThumb(v){
   document.querySelectorAll('[data-thdrop]').forEach(d=>{ d.addEventListener('dragover',e=>{e.preventDefault(); d.classList.add('over');}); d.addEventListener('dragleave',()=>d.classList.remove('over'));
     d.addEventListener('drop',e=>{ e.preventDefault(); d.classList.remove('over'); const fs=e.dataTransfer.files; go(fs, fs.length>1?null:d.dataset.thdrop); }); });
 }
-function closeSheet(){ S.open=null; S.editing=false; $('#sheetRoot').innerHTML=''; }
+function closeSheet(){ S.open=null; S.editing=false; $('#sheetRoot').innerHTML=''; document.body.classList.remove('has-sheet'); document.querySelectorAll('.row.sel').forEach(r=>r.classList.remove('sel')); }
 document.addEventListener('keydown',e=>{ if(e.key==='Escape' && S.open) closeSheet(); });
 function openSheet(id){ S.open=id; S.editing=false; renderSheet(); }
 function renderSheet(){
@@ -1608,6 +1649,7 @@ function renderSheet(){
     <div class="sheet-h"><div class="grow">${codeBadge(v.code, v.kind)}<h1 style="margin-top:6px">${esc(v.title)}</h1></div><button class="ghost" id="x" aria-label="닫기">✕</button></div>
     <div class="sheet-b">${body}</div></aside>`;
   $('#scrim').onclick=closeSheet; $('#x').onclick=closeSheet;
+  document.body.classList.add('has-sheet'); document.querySelectorAll('.row[data-id]').forEach(r=>r.classList.toggle('sel', r.dataset.id===v.id));
   document.querySelectorAll('[data-jump]').forEach(b=>b.onclick=()=>openSheet(b.dataset.jump));
   if (S.editing) bindEdit(v);
   else {
