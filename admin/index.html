@@ -700,7 +700,7 @@ function reasonsFor(v, ctx){
   if (v.status==='사용' && ctx.activeByCode[v.code]>1) r.push('중복 번호');
   if (v.status!=='사용') return r;
   if (!v.link && v.kind!=='C') r.push('링크 없음');   // C(기업맞춤)는 비메오 링크가 없는 게 정상
-  if (!v.instructor || !ctx.inst.has(v.instructor)) r.push('강사 확인');
+  if (!v.instructor || !ctx.inst.has(v.instructor)) r.push('강사 누락');
   if (!(v.summary||'').trim()) r.push('내용 요약 없음');
   if (v.kind!=='C' && !ctx.linked.has(v.code) && !(v.kind==='P' && (ctx.pViaH.has(v.code) || v.noModule))) r.push('모듈 미연결');   // noModule: 원본 H 없이 만든 P (모듈 대상 아님)   // P는 연결된 H가 모듈에 있으면 통과
   if (!v.duration || !v.date) r.push('정보 직접 입력');
@@ -720,7 +720,7 @@ function ctx(){
 function linkProblems(){
   const byCode={}; S.videos.forEach(v=>{ (byCode[v.code] ||= []).push(v); });
   return S.links.map(l=>{
-    if (!l.code) return {l, why:'번호 없음 (미제작?)'};
+    if (!l.code) return {l, why:'영상 미제작'};
     const vs=byCode[l.code]; if(!vs) return {l, why:'없는 번호'};
     // 미사용·리뉴얼로 대체된 영상은 회사가 쓰지 않기로 정한 것이라 확인 대상이 아님
     return null;
@@ -1390,18 +1390,27 @@ function viewModules(){
 function viewCheck(c){
   const items = S.videos.map(v=>({v, r:reasonsFor(v,c)})).filter(x=>x.r.length);
   const lp = linkProblems();
-  const counts={}; items.forEach(x=>x.r.forEach(r=>counts[r]=(counts[r]||0)+1));
-  const order=['번호 형식 오류','중복 번호','링크 없음','강사 확인','모듈 미연결','정보 직접 입력','내용 요약 없음'];
-  const list = S.reason==='모듈 연결 오류'? [] : items.filter(x=>!S.reason || x.r.includes(S.reason));
-  $('#app').innerHTML = `<h1>확인 필요</h1><p class="sub">빠진 칸이나 맞지 않는 값이 있는 영상입니다. 항목을 열어 고치면 목록에서 사라집니다.</p>
-  <div class="reasons"><button aria-pressed="${!S.reason}" data-r="">전체 ${items.length+lp.length}</button>${order.filter(r=>counts[r]).map(r=>`<button aria-pressed="${S.reason===r}" data-r="${esc(r)}">${esc(r)} ${counts[r]}</button>`).join('')}
-    ${lp.length?`<button aria-pressed="${S.reason==='모듈 연결 오류'}" data-r="모듈 연결 오류">모듈 연결 오류 ${lp.length}</button>`:''}</div>
-  ${S.reason==='모듈 연결 오류' ? `<div class="list">${lp.map(({l,why})=>`<div class="step"><span class="pos"></span><span>${l.code?`<span class="code ${esc(l.code[0])}">${esc(l.code)}</span>`:'—'}</span><span class="t" style="min-width:0"><b>${esc(modName(l.module))} ${l.pos}번</b> · ${esc(l.label)}<br><span class="pill bad">${esc(why)}</span></span></div>`).join('')}</div>`
-  : `<div class="list">${list.slice(0,S.shown).map(({v,r})=>`<div class="row" tabindex="0" data-id="${esc(v.id)}" style="grid-template-columns:92px minmax(0,1fr)">
+  // 세부 항목: 모듈 연결 오류 / 강사 누락 / 영상 미제작 (그 밖의 사유는 '기타')
+  const CAT = {'모듈 미연결':'모듈 연결 오류', '강사 누락':'강사 누락'};
+  const catOf = r => CAT[r] || '기타';
+  const lpCat = x => x.why==='영상 미제작' ? '영상 미제작' : '모듈 연결 오류';
+  const cats = ['모듈 연결 오류','강사 누락','영상 미제작','기타'];
+  const n = {}; cats.forEach(k=>n[k]=0);
+  items.forEach(x=>[...new Set(x.r.map(catOf))].forEach(k=>n[k]++)); lp.forEach(x=>n[lpCat(x)]++);
+  if (S.reason && !cats.includes(S.reason)) S.reason='';
+  const vids = items.filter(x=>!S.reason || x.r.some(r=>catOf(r)===S.reason));
+  const lps = lp.filter(x=>!S.reason || lpCat(x)===S.reason);
+  const lpRow = ({l,why})=>`<div class="step"><span class="pos"></span><span>${l.code?`<span class="code ${esc(l.code[0])}">${esc(l.code)}</span>`:'—'}</span><span class="t" style="min-width:0"><b>${esc(modName(l.module))} ${l.pos}번</b> · ${esc(l.label)}<br><span class="pill ${why==='영상 미제작'?'warn':'bad'}">${esc(why)}</span></span></div>`;
+  const vRow = ({v,r})=>`<div class="row" tabindex="0" data-id="${esc(v.id)}" style="grid-template-columns:92px minmax(0,1fr)">
       <span><span class="code ${esc(v.kind)}">${esc(v.code)}</span></span>
-      <span class="t"><b>${esc(v.title)}</b><span class="pills" style="white-space:normal">${r.map(x=>`<span class="pill ${'warn'}">${esc(x)}</span>`).join('')}</span></span></div>`).join('') || '<div class="empty">확인할 영상이 없습니다.</div>'}</div>
-    ${list.length>S.shown?`<div class="more"><button id="more">${list.length-S.shown}개 더 보기</button></div>`:''}
-    ${!S.reason && lp.length && list.length<=S.shown ? `<h2 style="font-size:15px;margin:22px 0 8px">모듈 연결 오류 ${lp.length}</h2><div class="list">${lp.map(({l,why})=>`<div class="step"><span class="pos"></span><span>${l.code?`<span class="code ${esc(l.code[0])}">${esc(l.code)}</span>`:'—'}</span><span class="t" style="min-width:0"><b>${esc(modName(l.module))} ${l.pos}번</b> · ${esc(l.label)}<br><span class="pill bad">${esc(why)}</span></span></div>`).join('')}</div>`:''}`}`;
+      <span class="t"><b>${esc(v.title)}</b><span class="pills" style="white-space:normal">${r.map(x=>`<span class="pill warn">${esc(x)}</span>`).join('')}</span></span></div>`;
+  const total = items.length + lp.length;
+  $('#app').innerHTML = `<h1>확인 필요</h1><p class="sub">빠진 칸이나 맞지 않는 값이 있는 영상, 아직 만들지 않은 모듈 영상입니다. 고치면 목록에서 사라집니다.</p>
+  <div class="reasons"><button aria-pressed="${!S.reason}" data-r="">전체 ${total}</button>${cats.filter(k=>n[k]).map(k=>`<button aria-pressed="${S.reason===k}" data-r="${esc(k)}">${esc(k)} ${n[k]}</button>`).join('')}</div>
+  ${vids.length?`${lps.length?`<h2 style="font-size:15px;margin:14px 0 8px">영상 ${vids.length}</h2>`:''}<div class="list">${vids.slice(0,S.shown).map(vRow).join('')}</div>
+    ${vids.length>S.shown?`<div class="more"><button id="more">${vids.length-S.shown}개 더 보기</button></div>`:''}`:''}
+  ${lps.length && vids.length<=S.shown?`${vids.length?`<h2 style="font-size:15px;margin:22px 0 8px">모듈리스트 ${lps.length}</h2>`:''}<div class="list">${lps.map(lpRow).join('')}</div>`:''}
+  ${!vids.length && !lps.length?'<div class="empty">확인할 항목이 없습니다.</div>':''}`;
   document.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{S.reason=b.dataset.r;S.shown=60;render();});
   $('#more')?.addEventListener('click',()=>{S.shown+=100;render();});
   bindRows($('#app'));
