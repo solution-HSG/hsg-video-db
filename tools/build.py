@@ -110,7 +110,7 @@ s = rep(s, BOOT_OLD, '''  claude.use('user').then(u=>{ S.user=u; });
 # 6) 직원용에서는 관리 메뉴 숨김 + 로그인 창
 AUTH_JS = r'''
 /* ---------- 직원용 / 관리자용 ---------- */
-const ADMIN_VIEWS = ['check','add','admin'];
+const ADMIN_VIEWS = ['check','add','admin','catalog'];
 function applyAuth(){
   S.canWrite = HSG.admin;
   document.querySelectorAll('#tabs a').forEach(a=>{ a.hidden = HSG.mode!=='admin' && ADMIN_VIEWS.includes(a.dataset.v); });
