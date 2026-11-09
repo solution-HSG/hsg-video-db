@@ -773,7 +773,7 @@ function rowHtml(v){
     <span class="t"><b><span class="rcodes">${codeBadge(v.code, v.kind)}${pb}</span>${esc(v.title)}${st}</b><span>${esc(sub)}</span></span>
     <span class="hide-s area-cell">${areaTag(v.area)}</span>
     <span class="hide-s mod-cell" title="${esc(videoModules(v).join(', '))}">${esc(videoModules(v).join(', ')||'—')}</span>
-    <span class="mono hide-s">${esc(v.instructor||'—')}</span>
+    <span class="hide-s inst-cell" title="${esc(v.instructor||'')}">${esc(instKo(v)||v.instructor||'—')}</span>
     <span class="mono">${esc(fmtDur(v.duration)||'—')}</span>
     <span class="mono hide-s">${esc(v.date||'—')}</span></div>`;
 }
