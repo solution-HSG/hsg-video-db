@@ -176,6 +176,7 @@ html.locked body>*:not(#gate){visibility:hidden}
 #gate p{margin:0 0 16px;color:var(--muted,#5b6977);font-size:13.5px}
 #gate input{width:100%;box-sizing:border-box;font:inherit;font-size:15px;padding:10px 12px;border:1px solid var(--line,#cdd5de);border-radius:8px;background:var(--bg,#fff);color:inherit}
 #gate button{width:100%;text-align:center;justify-content:center;margin-top:10px;font:inherit;font-size:15px;font-weight:600;padding:10px;border:0;border-radius:8px;background:var(--accent,#1f5f8b);color:#fff;cursor:pointer}
+#gate .ct{margin:6px 0 0;font-size:12.5px;line-height:1.6}#gate .ct a{color:var(--accent,#1f5f8b)}
 #gate .err{color:var(--bad,#b3362c);font-size:13px;min-height:18px;margin-top:8px}
 </style>
 <script>
@@ -186,7 +187,7 @@ html.locked body>*:not(#gate){visibility:hidden}
   function hex(b){ return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0');}).join(''); }
   function show(){
     var g=document.createElement('div'); g.id='gate';
-    g.innerHTML='<form autocomplete="off"><h1>HSG 영상 DB</h1><p>접속 비밀번호를 입력해 주세요.</p><input type="password" aria-label="접속 비밀번호" placeholder="비밀번호" required><button type="submit">들어가기</button><div class="err" role="alert"></div></form>';
+    g.innerHTML='<form autocomplete="off"><h1>HSG 영상 DB</h1><p>접속 비밀번호를 입력해 주세요.</p><input type="password" aria-label="접속 비밀번호" placeholder="비밀번호" required><button type="submit">들어가기</button><div class="err" role="alert"></div><p class="ct">비밀번호 · DB 문의: AX사업실 영상콘텐츠팀 정혜원 <a href="mailto:hwjung@hsg.or.kr">hwjung@hsg.or.kr</a></p></form>';
     document.body.appendChild(g);
     var f=g.querySelector('form'), i=g.querySelector('input'), er=g.querySelector('.err'); i.focus();
     f.onsubmit=function(e){ e.preventDefault();

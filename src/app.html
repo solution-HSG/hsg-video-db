@@ -430,6 +430,8 @@ label.btn.thumb-both,.form label.btn.thumb-both{display:inline-flex;flex-directi
 .mchart-a b i,.marea-h .dot{width:8px;height:8px;border-radius:2px;background:var(--ac,var(--muted));display:inline-block;margin-right:6px}
 .mchart-c .mbar-t i{background:var(--ac,var(--accent))}
 
+.contact{display:none}
+@media (max-width:999px){ .contact{display:block;order:9;width:100%;font-size:12px;color:var(--muted)} .contact span{font-weight:600;margin-right:6px} .contact b{font-weight:500} .contact b br{display:none} .contact a{margin-left:6px;color:var(--accent)} }
 /* ===== B안 레이아웃: 왼쪽 남색 메뉴 · 목록 · 오른쪽 상세 ===== */
 :root{--nav:#14213a;--nav-2:#24365a;--nav-ink:#c6cfdc;--nav-w:224px;--dock-w:480px}
 .rthumb{width:112px;aspect-ratio:16/9;border-radius:7px;overflow:hidden;background:var(--sunk);display:grid;place-items:center}
@@ -458,7 +460,11 @@ button.kpi[aria-pressed="true"]{border-color:var(--ac,var(--accent));box-shadow:
   nav.tabs a:hover{background:rgba(255,255,255,.06);color:#fff}
   nav.tabs a[aria-current="page"]{background:var(--nav-2);color:#fff;font-weight:600}
   nav.tabs .count{background:#f0a83a;color:var(--nav);font-weight:700}
-  .who{margin:auto 0 0;padding:10px 12px;color:var(--nav-ink)}.who .linkish{color:#fff}
+  .contact{display:block;margin-top:auto;padding:14px 12px;border-top:1px solid rgba(255,255,255,.1);font-size:12.5px;line-height:1.55;color:var(--nav-ink)}
+  .contact span{display:block;font-size:11px;letter-spacing:.06em;color:#8d9ab0;margin-bottom:4px;font-weight:600}
+  .contact b{display:block;color:#fff;font-weight:600}
+  .contact a{color:#9cc2f0;text-decoration:none;word-break:break-all}.contact a:hover{text-decoration:underline}
+  .who{margin:0;padding:10px 12px;border-top:1px solid rgba(255,255,255,.1);color:var(--nav-ink)}.who .linkish{color:#fff}
   main.wrap{max-width:1320px;padding-inline:26px;margin:0}
   .row{grid-template-columns:112px minmax(0,1fr) 84px 128px 56px 52px 88px}
 }
@@ -481,6 +487,7 @@ button.kpi[aria-pressed="true"]{border-color:var(--ac,var(--accent));box-shadow:
     <a href="#add" data-v="add">영상 등록</a>
     <a href="#admin" data-v="admin">관리</a>
   </nav>
+  <div class="contact"><span>DB 문의</span><b>AX사업실 영상콘텐츠팀 <br>정혜원</b><a href="mailto:hwjung@hsg.or.kr">hwjung@hsg.or.kr</a></div>
   <div class="who" id="who"></div>
 </div></header>
 

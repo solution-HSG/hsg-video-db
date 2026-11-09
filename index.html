@@ -435,6 +435,8 @@ label.btn.thumb-both,.form label.btn.thumb-both{display:inline-flex;flex-directi
 .mchart-a b i,.marea-h .dot{width:8px;height:8px;border-radius:2px;background:var(--ac,var(--muted));display:inline-block;margin-right:6px}
 .mchart-c .mbar-t i{background:var(--ac,var(--accent))}
 
+.contact{display:none}
+@media (max-width:999px){ .contact{display:block;order:9;width:100%;font-size:12px;color:var(--muted)} .contact span{font-weight:600;margin-right:6px} .contact b{font-weight:500} .contact b br{display:none} .contact a{margin-left:6px;color:var(--accent)} }
 /* ===== B안 레이아웃: 왼쪽 남색 메뉴 · 목록 · 오른쪽 상세 ===== */
 :root{--nav:#14213a;--nav-2:#24365a;--nav-ink:#c6cfdc;--nav-w:224px;--dock-w:480px}
 .rthumb{width:112px;aspect-ratio:16/9;border-radius:7px;overflow:hidden;background:var(--sunk);display:grid;place-items:center}
@@ -463,7 +465,11 @@ button.kpi[aria-pressed="true"]{border-color:var(--ac,var(--accent));box-shadow:
   nav.tabs a:hover{background:rgba(255,255,255,.06);color:#fff}
   nav.tabs a[aria-current="page"]{background:var(--nav-2);color:#fff;font-weight:600}
   nav.tabs .count{background:#f0a83a;color:var(--nav);font-weight:700}
-  .who{margin:auto 0 0;padding:10px 12px;color:var(--nav-ink)}.who .linkish{color:#fff}
+  .contact{display:block;margin-top:auto;padding:14px 12px;border-top:1px solid rgba(255,255,255,.1);font-size:12.5px;line-height:1.55;color:var(--nav-ink)}
+  .contact span{display:block;font-size:11px;letter-spacing:.06em;color:#8d9ab0;margin-bottom:4px;font-weight:600}
+  .contact b{display:block;color:#fff;font-weight:600}
+  .contact a{color:#9cc2f0;text-decoration:none;word-break:break-all}.contact a:hover{text-decoration:underline}
+  .who{margin:0;padding:10px 12px;border-top:1px solid rgba(255,255,255,.1);color:var(--nav-ink)}.who .linkish{color:#fff}
   main.wrap{max-width:1320px;padding-inline:26px;margin:0}
   .row{grid-template-columns:112px minmax(0,1fr) 84px 128px 56px 52px 88px}
 }
@@ -494,6 +500,7 @@ button.kpi[aria-pressed="true"]{border-color:var(--ac,var(--accent));box-shadow:
     <a href="#add" data-v="add">영상 등록</a>
     <a href="#admin" data-v="admin">관리</a>
   </nav>
+  <div class="contact"><span>DB 문의</span><b>AX사업실 영상콘텐츠팀 <br>정혜원</b><a href="mailto:hwjung@hsg.or.kr">hwjung@hsg.or.kr</a></div>
   <div class="who" id="who"></div>
 </div></header>
 
@@ -510,6 +517,7 @@ html.locked body>*:not(#gate){visibility:hidden}
 #gate p{margin:0 0 16px;color:var(--muted,#5b6977);font-size:13.5px}
 #gate input{width:100%;box-sizing:border-box;font:inherit;font-size:15px;padding:10px 12px;border:1px solid var(--line,#cdd5de);border-radius:8px;background:var(--bg,#fff);color:inherit}
 #gate button{width:100%;text-align:center;justify-content:center;margin-top:10px;font:inherit;font-size:15px;font-weight:600;padding:10px;border:0;border-radius:8px;background:var(--accent,#1f5f8b);color:#fff;cursor:pointer}
+#gate .ct{margin:6px 0 0;font-size:12.5px;line-height:1.6}#gate .ct a{color:var(--accent,#1f5f8b)}
 #gate .err{color:var(--bad,#b3362c);font-size:13px;min-height:18px;margin-top:8px}
 </style>
 <script>
@@ -520,7 +528,7 @@ html.locked body>*:not(#gate){visibility:hidden}
   function hex(b){ return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0');}).join(''); }
   function show(){
     var g=document.createElement('div'); g.id='gate';
-    g.innerHTML='<form autocomplete="off"><h1>HSG 영상 DB</h1><p>접속 비밀번호를 입력해 주세요.</p><input type="password" aria-label="접속 비밀번호" placeholder="비밀번호" required><button type="submit">들어가기</button><div class="err" role="alert"></div></form>';
+    g.innerHTML='<form autocomplete="off"><h1>HSG 영상 DB</h1><p>접속 비밀번호를 입력해 주세요.</p><input type="password" aria-label="접속 비밀번호" placeholder="비밀번호" required><button type="submit">들어가기</button><div class="err" role="alert"></div><p class="ct">비밀번호 · DB 문의: AX사업실 영상콘텐츠팀 정혜원 <a href="mailto:hwjung@hsg.or.kr">hwjung@hsg.or.kr</a></p></form>';
     document.body.appendChild(g);
     var f=g.querySelector('form'), i=g.querySelector('input'), er=g.querySelector('.err'); i.focus();
     f.onsubmit=function(e){ e.preventDefault();
