@@ -187,7 +187,7 @@ html.locked body>*:not(#gate){visibility:hidden}
   function hex(b){ return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0');}).join(''); }
   function show(){
     var g=document.createElement('div'); g.id='gate';
-    g.innerHTML='<form autocomplete="off"><h1>HSG 영상 DB</h1><p>접속 비밀번호를 입력해 주세요.</p><input type="password" aria-label="접속 비밀번호" placeholder="비밀번호" required><button type="submit">들어가기</button><div class="err" role="alert"></div><p class="ct">비밀번호 · DB 문의: AX사업실 영상콘텐츠팀 정혜원 <a href="mailto:hwjung@hsg.or.kr">hwjung@hsg.or.kr</a></p></form>';
+    g.innerHTML='<form autocomplete="off"><h1>HSG 영상 DB</h1><p>접속 비밀번호를 입력해 주세요.</p><input type="password" aria-label="접속 비밀번호" placeholder="비밀번호" required><button type="submit">들어가기</button><div class="err" role="alert"></div><p class="ct">비밀번호 · DB 문의: AX사업실 영상콘텐츠팀 정혜원 매니저 <a href="mailto:hwjung@hsg.or.kr">hwjung@hsg.or.kr</a></p></form>';
     document.body.appendChild(g);
     var f=g.querySelector('form'), i=g.querySelector('input'), er=g.querySelector('.err'); i.focus();
     f.onsubmit=function(e){ e.preventDefault();
