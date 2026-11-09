@@ -744,7 +744,7 @@ window.claude = {
 <script>
 (() => {
 const S = {videos:[], modules:[], links:[], instructors:[], loaded:{v:false,m:false,l:false,i:false},
-  view:'search', q:'', f:{kind:'',area:'',module:'',inst:'',status:'사용'}, sort:'code', shown:60,
+  view:'search', q:'', f:{kind:'H',area:'',module:'',inst:'',status:'사용'}, sort:'code', shown:60,
   mod:null, reason:'', canWrite:false, db:null, user:null, sample:null, uid:null, open:null, editing:false};
 const $ = (s, r=document) => r.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -897,7 +897,7 @@ function viewSearch(){
     <label><span class="label">상태</span><select id="fStatus">${opt('','전체',S.f.status)}${STATUSES.map(s=>opt(s,s,S.f.status)).join('')}</select></label>
   </div>
   <div class="resultbar"><span><b>${res.length}</b>개 영상${S.q||S.f.kind||S.f.area||S.f.module||S.f.inst?' 검색됨':''}</span>
-    ${(S.q||S.f.kind||S.f.area||S.f.module||S.f.inst||S.f.status!=='사용')?'<button class="ghost" id="reset">필터 초기화</button>':''}</div>
+    ${(S.q||S.f.kind!=='H'||S.f.area||S.f.module||S.f.inst||S.f.status!=='사용')?'<button class="ghost" id="reset">필터 초기화</button>':''}</div>
   <div class="list" role="list">
     <div class="row head"><span>썸네일</span><span>번호 · 제목 · 내용</span><span class="hide-s">영역</span><span class="hide-s">모듈</span><span class="hide-s">강사</span><span>길이</span><span class="hide-s">제작일자</span></div>
     ${res.slice(0,S.shown).map(rowHtml).join('') || '<div class="empty">조건에 맞는 영상이 없습니다. 검색어나 필터를 바꿔 보세요.</div>'}
@@ -911,7 +911,7 @@ function viewSearch(){
   $('#fModule').onchange=e=>{S.f.module=e.target.value;S.shown=60;render();};
   $('#fInst').onchange=e=>{S.f.inst=e.target.value;S.shown=60;render();};
   $('#fStatus').onchange=e=>{S.f.status=e.target.value;S.shown=60;render();};
-  $('#reset')?.addEventListener('click',()=>{S.q='';S.f={kind:'',area:'',module:'',inst:'',status:'사용'};render();});
+  $('#reset')?.addEventListener('click',()=>{S.q='';S.f={kind:'H',area:'',module:'',inst:'',status:'사용'};render();});
   $('#more')?.addEventListener('click',()=>{S.shown+=100;render();});
   bindRows();
 }
