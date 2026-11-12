@@ -724,32 +724,34 @@ function parseJson(t) {
   if (a < Infinity && b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch {} }
   throw { code: 'invalid_json' };
 }
-const sample = {
-  async json(prompt, opts = {}) {
-    const r = await call('ai', { prompt, maxTokens: opts.maxTokens || 16000 }, { raw: true, signal: opts.signal });
-    if (!r.ok) {
-      const j = await r.json().catch(() => ({}));
-      throw { code: j.error?.code || 'ai_error', message: j.error?.message || '' };
+async function aiText(prompt, opts = {}) {
+  const r = await call('ai', { prompt, maxTokens: opts.maxTokens || 16000 }, { raw: true, signal: opts.signal });
+  if (!r.ok) {
+    const j = await r.json().catch(() => ({}));
+    throw { code: j.error?.code || 'ai_error', message: j.error?.message || '' };
+  }
+  const reader = r.body.getReader(), dec = new TextDecoder();
+  let text = '';
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      text += dec.decode(value, { stream: true });
+      if (opts.onText) { try { opts.onText({ text }); } catch {} }
     }
-    const reader = r.body.getReader(), dec = new TextDecoder();
-    let text = '';
-    try {
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        text += dec.decode(value, { stream: true });
-        if (opts.onText) { try { opts.onText({ text }); } catch {} }
-      }
-    } catch (e) {
-      if (opts.signal?.aborted) throw { code: 'cancelled' };
-      throw { code: 'ai_error' };
-    }
-    const k = text.indexOf('\u0000ERROR:');
-    if (k >= 0) throw { code: /overloaded|rate/.test(text.slice(k)) ? 'rate_limited' : 'ai_error' };
-    if (!text.trim()) throw { code: 'empty_completion' };
-    return parseJson(text);
-  },
-};
+  } catch (e) {
+    if (opts.signal?.aborted) throw { code: 'cancelled' };
+    throw { code: 'ai_error' };
+  }
+  const k = text.indexOf('\u0000ERROR:');
+  if (k >= 0) throw { code: /overloaded|rate/.test(text.slice(k)) ? 'rate_limited' : 'ai_error' };
+  if (!text.trim()) throw { code: 'empty_completion' };
+  return text;
+}
+// sample(prompt) → {text}  (영상 등록 화면의 내용 요약 초안)
+// sample.json(prompt) → 객체 (카달로그, 요약 다시 쓰기)
+const sample = async (prompt, opts = {}) => ({ text: await aiText(prompt, opts) });
+sample.json = async (prompt, opts = {}) => parseJson(await aiText(prompt, opts));
 
 /* ---------- 파일(썸네일) ---------- */
 const toB64 = blob => new Promise((ok, no) => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(',')[1]); fr.onerror = no; fr.readAsDataURL(blob); });
@@ -1602,7 +1604,10 @@ function viewAdd(){
   $('#aProd').onchange=e=>{ draft.prod=e.target.checked; render(); };
   $('#aPTitle')?.addEventListener('input',e=>{ draft.ptitle=e.target.value; const b=$('#addForm [type=submit]'); if(b) b.disabled=!(S.canWrite&&draft.ptitle.trim()); });
   $('#aPKind')?.addEventListener('change',e=>{ draft.pkind=e.target.value; render(); });
-  const bindAS=()=>bindScriptSlot('a', draft.script, draft.scriptName, async(text,name)=>{ draft.script=text; draft.scriptName=name; render(); }, ()=>{ draft.script=''; draft.scriptName=''; render(); });
+  const bindAS=()=>bindScriptSlot('a', draft.script, draft.scriptName, async(text,name)=>{ draft.script=text; draft.scriptName=name; render();
+      // 아래 스크립트 칸에 올려도 내용 요약이 비어 있으면 바로 AI 초안을 만든다
+      if (!String(draft.summary||'').trim() && S.gen_a){ $('#aKm')?.scrollIntoView({behavior:'smooth',block:'center'}); await S.gen_a(text); }
+      else toast('스크립트를 저장했습니다 · 내용 요약을 새로 만들려면 위 내용 요약 칸의 \'스크립트 올리기\'를 써 주세요'); }, ()=>{ draft.script=''; draft.scriptName=''; render(); });
   bindAS();
   bindKeymsg('a', ()=>draft.summary, v=>{draft.summary=v;}, ()=>draft.prod? draft.ptitle : p.title, (text,name)=>{ draft.script=text; draft.scriptName=name; const el=$('#aScriptSlot'); if(el){ el.innerHTML=scriptSlot('a', text, name, true); bindAS(); } });
   bindModuleChips('a', draft.modules, ()=>render());
@@ -1709,6 +1714,7 @@ ${text}`;
     try{ const text = /\.docx$/i.test(f.name)? await docxText(f) : await f.text(); if(onScript) onScript(text.replace(/\r/g,'').trim(), f.name); await gen(text); }
     catch{ st.textContent='파일을 읽지 못했습니다. .docx 또는 .txt 파일인지 확인해 주세요.'; } e.target.value=''; };
   $('#'+p+'Gen').onclick=()=>gen($('#'+p+'Script').value);
+  S['gen_'+p]=gen;
 }
 function moduleChips(p, list){
   const mods=S.modules.slice().sort((a,b)=>a.name.localeCompare(b.name,'ko'));

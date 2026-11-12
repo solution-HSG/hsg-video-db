@@ -138,32 +138,34 @@ function parseJson(t) {
   if (a < Infinity && b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch {} }
   throw { code: 'invalid_json' };
 }
-const sample = {
-  async json(prompt, opts = {}) {
-    const r = await call('ai', { prompt, maxTokens: opts.maxTokens || 16000 }, { raw: true, signal: opts.signal });
-    if (!r.ok) {
-      const j = await r.json().catch(() => ({}));
-      throw { code: j.error?.code || 'ai_error', message: j.error?.message || '' };
+async function aiText(prompt, opts = {}) {
+  const r = await call('ai', { prompt, maxTokens: opts.maxTokens || 16000 }, { raw: true, signal: opts.signal });
+  if (!r.ok) {
+    const j = await r.json().catch(() => ({}));
+    throw { code: j.error?.code || 'ai_error', message: j.error?.message || '' };
+  }
+  const reader = r.body.getReader(), dec = new TextDecoder();
+  let text = '';
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      text += dec.decode(value, { stream: true });
+      if (opts.onText) { try { opts.onText({ text }); } catch {} }
     }
-    const reader = r.body.getReader(), dec = new TextDecoder();
-    let text = '';
-    try {
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        text += dec.decode(value, { stream: true });
-        if (opts.onText) { try { opts.onText({ text }); } catch {} }
-      }
-    } catch (e) {
-      if (opts.signal?.aborted) throw { code: 'cancelled' };
-      throw { code: 'ai_error' };
-    }
-    const k = text.indexOf('\u0000ERROR:');
-    if (k >= 0) throw { code: /overloaded|rate/.test(text.slice(k)) ? 'rate_limited' : 'ai_error' };
-    if (!text.trim()) throw { code: 'empty_completion' };
-    return parseJson(text);
-  },
-};
+  } catch (e) {
+    if (opts.signal?.aborted) throw { code: 'cancelled' };
+    throw { code: 'ai_error' };
+  }
+  const k = text.indexOf('\u0000ERROR:');
+  if (k >= 0) throw { code: /overloaded|rate/.test(text.slice(k)) ? 'rate_limited' : 'ai_error' };
+  if (!text.trim()) throw { code: 'empty_completion' };
+  return text;
+}
+// sample(prompt) → {text}  (영상 등록 화면의 내용 요약 초안)
+// sample.json(prompt) → 객체 (카달로그, 요약 다시 쓰기)
+const sample = async (prompt, opts = {}) => ({ text: await aiText(prompt, opts) });
+sample.json = async (prompt, opts = {}) => parseJson(await aiText(prompt, opts));
 
 /* ---------- 파일(썸네일) ---------- */
 const toB64 = blob => new Promise((ok, no) => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(',')[1]); fr.onerror = no; fr.readAsDataURL(blob); });
