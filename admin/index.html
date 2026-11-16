@@ -693,7 +693,7 @@ function parseJson(t) {
   throw { code: 'invalid_json' };
 }
 async function aiText(prompt, opts = {}) {
-  const r = await call('ai', { prompt, maxTokens: opts.maxTokens || 16000 }, { raw: true, signal: opts.signal });
+  const r = await call('ai', { prompt, maxTokens: opts.maxTokens || 16000, json: opts.json !== false }, { raw: true, signal: opts.signal });
   if (!r.ok) {
     const j = await r.json().catch(() => ({}));
     throw { code: j.error?.code || 'ai_error', message: j.error?.message || '' };
@@ -718,7 +718,7 @@ async function aiText(prompt, opts = {}) {
 }
 // sample(prompt) → {text}  (영상 등록 화면의 내용 요약 초안)
 // sample.json(prompt) → 객체 (카달로그, 요약 다시 쓰기)
-const sample = async (prompt, opts = {}) => ({ text: await aiText(prompt, opts) });
+const sample = async (prompt, opts = {}) => ({ text: await aiText(prompt, { ...opts, json: false }) });
 sample.json = async (prompt, opts = {}) => parseJson(await aiText(prompt, opts));
 
 /* ---------- 파일(썸네일) ---------- */

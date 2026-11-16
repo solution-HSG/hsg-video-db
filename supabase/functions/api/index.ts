@@ -1,7 +1,7 @@
 // HSG 영상 DB 서버 함수
 // - 읽기는 누구나 (사이트가 Supabase에서 직접 읽음)
 // - 쓰기·파일·시트 반영은 관리자 비밀번호(x-admin-key)가 있어야 함
-// - AI(Claude API)는 카달로그 만들기에 쓰므로 누구나 호출 가능
+// - AI(Claude API)도 관리자만 (회사 API 키로 비용이 나감)
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const MODEL = "claude-sonnet-5-5";
@@ -52,7 +52,7 @@ const okCol = (c: unknown) => typeof c === "string" && COLS.has(c);
 const okId = (i: unknown) => typeof i === "string" && /^[A-Za-z0-9_\-.~:@+]{1,200}$/.test(i);
 const rid = () => Array.from(crypto.getRandomValues(new Uint8Array(15)), (b) => "abcdefghijklmnopqrstuvwxyz0123456789"[b % 36]).join("");
 
-async function ai(body: { prompt?: string; maxTokens?: number }) {
+async function ai(body: { prompt?: string; maxTokens?: number; json?: boolean }) {
   const key = Deno.env.get("ANTHROPIC_API_KEY");
   if (!key) return fail("ai_not_configured", "ANTHROPIC_API_KEY가 없습니다", 503);
   const prompt = String(body.prompt || "");
@@ -64,7 +64,7 @@ async function ai(body: { prompt?: string; maxTokens?: number }) {
       model: MODEL,
       max_tokens: Math.min(Number(body.maxTokens) || 16000, 32000),
       stream: true,
-      system: "요청에 맞는 JSON 하나만 출력한다. 코드 블록이나 설명 문장 없이 JSON만 쓴다.",
+      ...(body.json === false ? {} : { system: "요청에 맞는 JSON 하나만 출력한다. 코드 블록이나 설명 문장 없이 JSON만 쓴다." }),
       messages: [{ role: "user", content: prompt }],
     }),
   });
@@ -131,7 +131,6 @@ Deno.serve(async (req) => {
   }
   const a = body.action;
   try {
-    if (a === "ai") return await ai(body);
     if (a === "ping") {
       const { count } = await sb.from("docs").select("*", { count: "exact", head: true });
       return json({ ok: true, docs: count });
@@ -139,6 +138,8 @@ Deno.serve(async (req) => {
     const admin = await isAdmin(req);
     if (a === "check") return json({ admin });
     if (!admin) return fail("unauthorized", "관리자 비밀번호가 필요합니다", 401);
+    // AI(Claude API) 호출도 관리자만: 서버에 있는 회사 API 키로 비용이 나가기 때문
+    if (a === "ai") return await ai(body);
 
     if (a === "set") {
       if (!okCol(body.col) || !okId(body.id)) return fail("invalid_argument", "path");
