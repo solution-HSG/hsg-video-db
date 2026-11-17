@@ -1491,20 +1491,14 @@ function viewAdmin(){
   const activeCodes=new Set(act.map(v=>v.code));
   const emptyMods=S.modules.filter(m=>!S.links.some(l=>l.module===m.id&&activeCodes.has(l.code))).length;
   const c=ctx(); const nCheck=S.videos.filter(v=>reasonsFor(v,c).length).length;
-  $('#app').innerHTML = `<h1>관리</h1><p class="sub">자동 등록 설정, 데이터 현황, 강사 목록을 관리합니다.</p>
+  $('#app').innerHTML = `<h1>관리</h1><p class="sub">데이터 현황과 강사 목록을 관리합니다.</p>
   <div style="display:flex;flex-direction:column;gap:16px">
-    <div class="card"><div class="vimeo-head"><h2>비메오 자동 등록</h2><span class="pill warn">API 미연결</span></div>
-      <div class="vimeo-grid">
-        <dl class="meta"><dt>일정</dt><dd>매주 월 07:00, 금 19:00 (한국 시간)</dd><dt>강사</dt><dd>지금은 등록 화면에서 선택 · 연결 후 비메오 태그에서 자동</dd></dl>
-        <div style="display:flex;flex-direction:column;gap:8px;min-width:0"><label style="display:flex;flex-direction:column;gap:4px"><span class="label">API 토큰</span><input type="password" placeholder="토큰 발급 후 연동 단계에서 설정" disabled></label>
-          <div class="actions"><button disabled title="API 토큰이 연결되면 사용할 수 있습니다">지금 반영</button><span class="hint">토큰은 이 페이지에 저장하지 않습니다.</span></div></div>
-      </div></div>
     <section aria-label="데이터 현황"><h2 style="margin-bottom:8px">데이터 현황</h2>
       <div class="tiles">
         <div class="tile"><span class="label">전체 영상</span><b>${act.length}</b><span class="hint">사용 중 · 전체 ${S.videos.length}편</span></div>
-        ${kinds.map(x=>`<div class="tile"><span class="label">${esc(KIND[x.k])}</span><b>${x.n}</b><span class="hint">${(()=>{const d=S.videos.filter(v=>v.kind===x.k&&v.status!=='사용'&&v.status!=='제작 중').length;return d?`삭제·대체 ${d}편 제외`:'모두 사용 중';})()}</span></div>`).join('')}
+        ${kinds.map(x=>`<div class="tile"><span class="label">${esc(KIND[x.k])}</span><b>${x.n}</b><span class="hint">${(()=>{const d=S.videos.filter(v=>v.kind===x.k&&v.status!=='사용'&&v.status!=='제작 중').length;return d?`미사용·대체 ${d}편 제외`:'모두 사용 중';})()}</span></div>`).join('')}
         <div class="tile"><span class="label">제작 중</span><b>${S.videos.filter(v=>v.status==='제작 중').length}</b><span class="hint">편집 전 · 링크 없이 등록</span></div>
-        <div class="tile"><span class="label">과정명 (V.4)</span><b>${S.modules.length}</b><span class="hint">영상 없는 강의 ${emptyMods}개</span></div>
+        <div class="tile"><span class="label">과정명 (V.4)</span><b>${S.modules.length}</b><span class="hint">영상 없는 과정 ${emptyMods}개</span></div>
         <a class="tile" href="#check"><span class="label">확인 필요</span><b style="color:var(--warn)">${nCheck}</b><span class="hint">목록 열기 →</span></a>
       </div></section>
     <div class="grid2">${statInstructors()}${statModules()}</div>
