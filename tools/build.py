@@ -137,7 +137,7 @@ function showLogin(){
   $('#loginPw').focus();
   $('#loginForm').onsubmit=async e=>{ e.preventDefault(); const b=e.target.querySelector('[type=submit]'); b.disabled=true; $('#loginErr').textContent='';
     const ok=await HSG.login($('#loginPw').value); b.disabled=false;
-    if (ok){ box.remove(); applyAuth(); toast('관리자로 로그인했습니다'); } else { $('#loginErr').textContent='비밀번호가 맞지 않습니다.'; $('#loginPw').select(); } };
+    if (ok){ box.remove(); applyAuth(); toast('관리자로 로그인했습니다'); } else { const li=HSG.loginInfo||{}; $('#loginErr').textContent = li.locked ? `비밀번호를 5번 잘못 입력해 로그인이 막혔습니다. ${li.locked}분 뒤에 다시 시도해 주세요.` : '비밀번호가 맞지 않습니다.'+(li.left!=null&&li.left<=3?` (남은 기회 ${li.left}번)`:''); $('#loginPw').select(); } };
 }
 window.addEventListener('hsg-auth', ()=>{ applyAuth(); });
 '''

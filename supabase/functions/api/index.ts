@@ -1,6 +1,6 @@
 // HSG 영상 DB 서버 함수
 // - 읽기는 누구나 (사이트가 Supabase에서 직접 읽음)
-// - 쓰기·파일·시트 반영은 관리자 비밀번호(x-admin-key)가 있어야 함
+// - 쓰기·파일·시트 반영은 관리자 비밀번호(x-admin-key)가 있어야 함 (5번 틀리면 10분 잠금)
 // - AI(Claude API)도 관리자만 (회사 API 키로 비용이 나감)
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -37,15 +37,28 @@ function safeEq(a: string, b: string) {
   for (let i = 0; i < Math.max(x.length, y.length); i++) d |= (x[i] || 0) ^ (y[i] || 0);
   return d === 0;
 }
-async function isAdmin(req: Request) {
+// 관리자 확인 + 로그인 실패 잠금 (같은 IP에서 5번 틀리면 10분 잠금)
+const MAX_FAILS = 5, LOCK_MIN = 10;
+const clientIp = (req: Request) =>
+  (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || req.headers.get("cf-connecting-ip") || "unknown";
+type Auth = { ok: boolean; locked?: number; left?: number };
+async function adminState(req: Request): Promise<Auth> {
   const k = req.headers.get("x-admin-key") || "";
-  if (!k) return false;
+  if (!k) return { ok: false };
+  const ip = clientIp(req);
+  const { data: row } = await sb.from("auth_fail").select("locked_until").eq("ip", ip).maybeSingle();
+  const until = row?.locked_until ? new Date(row.locked_until).getTime() : 0;
+  if (until > Date.now()) return { ok: false, locked: Math.ceil((until - Date.now()) / 60000) };
   const pw = Deno.env.get("ADMIN_PASSWORD");
-  if (pw && safeEq(k, pw)) return true;
-  const c = await conf();
-  if (c.MIGRATE_TOKEN && safeEq(k, c.MIGRATE_TOKEN)) return true;
-  await new Promise((r) => setTimeout(r, 600));
-  return false;
+  if (pw && safeEq(k, pw)) {
+    if (row) await sb.from("auth_fail").delete().eq("ip", ip);
+    return { ok: true };
+  }
+  const { data } = await sb.rpc("auth_fail_hit", { p_ip: ip, p_max: MAX_FAILS, p_minutes: LOCK_MIN });
+  const r = Array.isArray(data) ? data[0] : data;
+  await new Promise((res) => setTimeout(res, 600));
+  if (r?.locked_until && new Date(r.locked_until).getTime() > Date.now()) return { ok: false, locked: LOCK_MIN };
+  return { ok: false, left: Math.max(0, MAX_FAILS - (r?.fails || 0)) };
 }
 const COLS = new Set(["videos", "modules", "mlinks", "instructors", "settings", "history"]);
 const okCol = (c: unknown) => typeof c === "string" && COLS.has(c);
@@ -135,9 +148,10 @@ Deno.serve(async (req) => {
       const { count } = await sb.from("docs").select("*", { count: "exact", head: true });
       return json({ ok: true, docs: count });
     }
-    const admin = await isAdmin(req);
-    if (a === "check") return json({ admin });
-    if (!admin) return fail("unauthorized", "관리자 비밀번호가 필요합니다", 401);
+    const auth = await adminState(req);
+    if (a === "check") return json({ admin: auth.ok, locked: auth.locked || 0, left: auth.left ?? null });
+    if (auth.locked) return fail("locked", `비밀번호를 ${MAX_FAILS}번 잘못 입력해 ${auth.locked}분 동안 로그인이 막혔습니다`, 429);
+    if (!auth.ok) return fail("unauthorized", "관리자 비밀번호가 필요합니다", 401);
     // AI(Claude API) 호출도 관리자만: 서버에 있는 회사 API 키로 비용이 나가기 때문
     if (a === "ai") return await ai(body);
 

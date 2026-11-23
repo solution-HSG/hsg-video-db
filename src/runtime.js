@@ -36,6 +36,7 @@ async function call(action, body = {}, opts = {}) {
   const j = await r.json().catch(() => ({}));
   if (!r.ok || j.error) {
     const code = j.error?.code || 'server_error';
+    if (code === 'locked') { HSG.admin = false; lsSet(LS, ''); window.dispatchEvent(new Event('hsg-auth')); }
     if (code === 'unauthorized') { HSG.admin = false; window.dispatchEvent(new Event('hsg-auth')); throw { code: 'invalid_argument', message: j.error.message }; }
     throw { code, message: j.error?.message || '' };
   }
@@ -46,6 +47,7 @@ HSG.call = call;
 HSG.login = async pw => {
   lsSet(LS, pw);
   const j = await call('check').catch(() => ({ admin: false }));
+  HSG.loginInfo = { locked: j.locked || 0, left: j.left ?? null };   // 잠금 남은 분, 남은 기회
   HSG.admin = !!j.admin;
   if (!HSG.admin) lsSet(LS, '');
   return HSG.admin;
